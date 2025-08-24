@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark MapValues - Transform Values in Pair RDDs</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#what-mapvalues-does">MapValues Basics</a>
+                <a href="#examples">Examples</a>
+                <a href="#practice">Practice</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>MapValues Operations</h1>
+            <p>Transform only the values in key-value pair RDDs while preserving keys</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="reducebykey.html">ReduceByKey</a> / MapValues
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-mapvalues-does">What MapValues Does</a></li>
+                <li><a href="#basic-examples">Basic Examples</a></li>
+                <li><a href="#telecom-setup">Telecom Dataset Setup</a></li>
+                <li><a href="#telecom-examples">MapValues on Your Data</a></li>
+                <li><a href="#edge-cases">Edge Cases & Exam Bullets</a></li>
+                <li><a href="#exercises">Mini Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="what-mapvalues-does" class="content-section">
+            <h2>What MapValues Does (In One Sentence)</h2>
+            
+            <p><code>mapValues(f)</code> works on a pair RDD <code>[(key, value), ...]</code> and applies <code>f</code> only to the value; the key stays exactly the same.</p>
+
+            <div class="highlight-box">
+                <h4>Same As:</h4>
+                <code>rdd.map(lambda kv: (kv[0], f(kv[1])))</code>
+                <p>But <code>mapValues(f)</code> is shorter, clearer, and (important detail) it preserves the partitioner since keys don't change.</p>
+            </div>
+
+            <h4>It Does NOT:</h4>
+            <ul>
+                <li>Change keys (use <code>map</code> for that)</li>
+                <li>Drop rows (use <code>filter</code> for that)</li>
+                <li>Explode to many rows (use <code>flatMapValues</code> for that)</li>
+            </ul>
+        </section>
+
+        <section id="basic-examples" class="content-section">
+            <h2>Basic Examples (Toy RDDs)</h2>
+            
+            <h3>A) Multiply Only the Values</h3>
+            <div class="code-block">
+# Create a simple pair RDD
+pairs = sc.parallelize([("a", 1), ("b", 2), ("a", 3)])
+
+# Multiply only the values by 10
+res = pairs.mapValues(lambda v: v * 10)
+
+# Show the results
+print(res.collect())     # Output: [('a', 10), ('b', 20), ('a', 30)]
+            </div>
+
+            <h3>B) Clean None Values (Keep Keys)</h3>
+            <div class="code-block">
+# Handle None values in pair RDD
+pairs = sc.parallelize([("x", None), ("y", 5), ("z", None)])
+
+# Replace None values with 0
+res = pairs.mapValues(lambda v: 0 if v is None else v)
+
+# Display results
+print(res.collect())     # Output: [('x', 0), ('y', 5), ('z', 0)]
+            </div>
+
+            <h3>C) Turn Value into a Tuple (Shape Change is Allowed)</h3>
+            <div class="code-block">
+# Transform values into tuples
+pairs = sc.parallelize([("a", 3), ("b", 7)])
+
+# Create tuple with (number, is_even)
+res = pairs.mapValues(lambda v: (v, v % 2 == 0))
+
+# Show the transformed data
+print(res.collect())     # Output: [('a', (3, False)), ('b', (7, False))]
+            </div>
+
+            <h3>D) Map vs MapValues (Same Result)</h3>
+            <div class="code-block">
+pairs = sc.parallelize([("k1", 2), ("k2", 5)])
+m1 = pairs.mapValues(lambda v: v + 1)
+m2 = pairs.map(lambda kv: (kv[0], kv[1] + 1))
+print(m1.collect(), m2.collect())
+            </div>
+
+            <h3>E) Need Many Outputs? Use flatMapValues, Not mapValues</h3>
+            <div class="code-block">
+pairs = sc.parallelize([("a", [1,2]), ("b", [3])])
+# mapValues keeps the list as-is
+print(pairs.mapValues(lambda xs: [x*10 for x in xs]).collect())
+# flatMapValues explodes
+print(pairs.flatMapValues(lambda xs: [x*10 for x in xs]).collect())  # [('a',10),('a',20),('b',30)]
+            </div>
+        </section>
+
+        <section id="telecom-setup" class="content-section">
+            <h2>Set Up Your Telecom RDD (Run Once)</h2>
+            
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+
+# Drop empties + header
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+# Quick parser with flatMap (skip bad lines by returning [])
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: return []
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+
+    row = (
+        p[0].strip(),           # 0: customer_id
+        p[1].strip(),           # 1: mobile
+        norm(p[2]),             # 2: gender
+        norm(p[3]) == "Y",      # 3: senior (bool)
+        norm(p[4]),             # 4: mode
+        zint(p[5]),             # 5: calls
+        zint(p[6]),             # 6: sms
+        norm(p[7]),             # 7: internet status
+        zfloat(p[8]),           # 8: monthly charges
+        norm(p[9]) == "Y"       # 9: churn (bool)
+    )
+    return [row]
+
+clean = base.flatMap(parse_or_skip)
+print("clean preview:", clean.take(3))
+            </div>
+
+            <p>Rows look like: <code>(id, mobile, gender, senior, mode, calls, sms, net, charges, churn)</code></p>
+        </section>
+
+        <section id="telecom-examples" class="content-section">
+            <h2>MapValues on Your Dataset</h2>
+            
+            <h3>1. Normalize Net Status for Each Customer (Value-Only Transform)</h3>
+            <p>First, make a pair RDD keyed by customer id:</p>
+            <div class="code-block">
+cust_net = clean.map(lambda r: (r[0], r[7]))   # (customer_id, net_status)
+print(cust_net.take(3))
+            </div>
+
+            <p>Now normalize value → "ACTIVE" or "INACTIVE":</p>
+            <div class="code-block">
+ACTIVE = {"ACTIVE", "ENABLED", "ON"}
+
+cust_net_norm = cust_net.mapValues(lambda s: "ACTIVE" if s in ACTIVE else "INACTIVE")
+print(cust_net_norm.take(5))
+            </div>
+
+            <p>Keys (customer IDs) are unchanged. Only value transformed.</p>
+
+            <h3>2. Bucketize Charges per Customer (Value-Only Transform)</h3>
+            <div class="code-block">
+cust_charge = clean.map(lambda r: (r[0], r[8]))  # (customer_id, charges float or None)
+
+def bucket(chg):
+    if chg is None: return "UNK"
+    if chg < 30:    return "LOW"
+    if chg <= 70:   return "MID"
+    return "HIGH"
+
+cust_charge_bucket = cust_charge.mapValues(bucket)
+print(cust_charge_bucket.take(5))
+            </div>
+
+            <h3>3. Build a Compact Feature Dict per Customer</h3>
+            <div class="code-block">
+cust_to_row = clean.map(lambda r: (r[0], r))  # (customer_id, full_row)
+
+def to_features(row):
+    # row = (id, mobile, gender, senior, mode, calls, sms, net, charges, churn)
+    gender, senior, mode, calls, sms, net, charges, churn = row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]
+    return {
+        "gender":  gender,
+        "senior":  senior,
+        "mode":    mode,
+        "has_calls": calls is not None and calls > 0,
+        "has_sms":   sms   is not None and sms   > 0,
+        "net":     "ACTIVE" if net in {"ACTIVE","ENABLED","ON"} else "INACTIVE",
+        "charge_bucket": ("UNK" if charges is None else ("LOW" if charges < 30 else "MID" if charges <= 70 else "HIGH")),
+        "churn":   churn
+    }
+
+cust_feats = cust_to_row.mapValues(to_features)
+print(cust_feats.take(3))
+            </div>
+
+            <h3>4. Prepare for Later Aggregations (Shape Values)</h3>
+            <p>For average later, store (sum, count):</p>
+            <div class="code-block">
+mode_charge = clean.flatMap(lambda r: [] if r[8] is None else [(r[4], r[8])])  # (mode, charge)
+mode_sumcnt = mode_charge.mapValues(lambda c: (c, 1))
+print(mode_sumcnt.take(5))
+            </div>
+
+            <p>For booleans, store 0/1 flags:</p>
+            <div class="code-block">
+gender_churn = clean.map(lambda r: (r[2], r[9]))         # (gender, churn_bool)
+gender_flag  = gender_churn.mapValues(lambda b: 1 if b else 0)
+print(gender_flag.take(5))
+            </div>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>Edge Cases & "Exam Bullets"</h2>
+            
+            <div class="highlight-box">
+                <h4>Requirements & Limitations:</h4>
+                <ul>
+                    <li>✅ mapValues requires a pair RDD. If an element isn't a 2-tuple, you'll get an unpack error. Make pairs first with <code>.map(lambda r: (key, value))</code>.</li>
+                    <li>✅ It does not drop rows. If you want to drop based on value, do: <code>r = r.mapValues(f).filter(lambda kv: some_condition_on(kv[1]))</code></li>
+                    <li>✅ It cannot emit multiple rows; use <code>flatMapValues</code> for that.</li>
+                    <li>✅ It keeps keys and preserves partitioner (good for performance).</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>Performance Considerations:</h4>
+                <ul>
+                    <li>⚠️ If the value is a big iterator (e.g., from groupByKey()), be careful: converting to list(value) can blow memory. Prefer single-pass computations.</li>
+                    <li>⚠️ Your function runs for every value; keep it light. For shared lookups (big dicts), use a broadcast.</li>
+                </ul>
+            </div>
+
+            <h3>Broadcast Example:</h3>
+            <div class="code-block">
+b = sc.broadcast({"PRE-PAID":"PREPAID", "PP":"PREPAID"})
+modes = clean.map(lambda r: (r[0], r[4]))
+modes_norm = modes.mapValues(lambda m: b.value.get(m, m))
+            </div>
+        </section>
+
+        <section id="exercises" class="content-section">
+            <h2>Mini Exercises</h2>
+            
+            <h3>1. Normalize Modes</h3>
+            <p>Build (customer_id, mode) and use mapValues to map "POST-PAID"→"POSTPAID", "PRE-PAID"/"PP"→"PREPAID", otherwise keep as-is.</p>
+
+            <h3>2. Make Usage Tuples</h3>
+            <p>From clean, build (customer_id, (calls, sms)), then mapValues to (total_usage, has_sms) where total_usage = (calls or 0) + (sms or 0) and has_sms is True/False.</p>
+
+            <h3>3. Mark Risky Customers</h3>
+            <p>Build (customer_id, (charges, churn_bool)), then mapValues to a risk label:</p>
+            <ul>
+                <li>"HIGH_RISK" if charges > 70 and churn == True</li>
+                <li>"LOW_RISK" if charges <= 70 and churn == False</li>
+                <li>"MEDIUM_RISK" otherwise (treat None charges as medium)</li>
+            </ul>
+
+            <h3>4. Prepare for Average Later (Just Shape Values)</h3>
+            <p>Build (gender, charges) skipping None charges. Use mapValues to convert charges into (sum=charges, count=1). Preview with take(5).</p>
+        </section>
+        
+        <div class="topic-navigation">
+            <div>
+                <a href="reducebykey.html" class="nav-link">
+                    ← Previous: ReduceByKey
+                </a>
+            </div>
+            <div>
+                <a href="groupbykey.html" class="nav-link">
+                    Next: GroupByKey →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+</body>
+</html>

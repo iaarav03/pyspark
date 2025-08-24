@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark GroupByKey - Group Values by Key</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#what-groupbykey-does">GroupByKey Basics</a>
+                <a href="#examples">Examples</a>
+                <a href="#practice">Practice</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>GroupByKey Operations</h1>
+            <p>Group values by their keys and understand when to use vs reduceByKey</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="mapvalues.html">MapValues</a> / GroupByKey
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#mental-model">Mental Model</a></li>
+                <li><a href="#warm-ups">Warm-up Examples</a></li>
+                <li><a href="#telecom-setup">Telecom Dataset Setup</a></li>
+                <li><a href="#telecom-examples">Easy GroupByKey Examples</a></li>
+                <li><a href="#explode-group">Explode Then Group Pattern</a></li>
+                <li><a href="#partitions">Controlling Partitions</a></li>
+                <li><a href="#gotchas">Gotchas & Exam Notes</a></li>
+                <li><a href="#practice">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="mental-model" class="content-section">
+            <h2>Mental Model (What It Does)</h2>
+            
+            <p>You start with a pair RDD of (key, value) items.</p>
+            <p><code>groupByKey()</code> shuffles all values for the same key to the same reducer and gives you (key, Iterable[values]).</p>
+
+            <div class="highlight-box warning">
+                <h4>Important:</h4>
+                <p>After groupByKey, you usually still need a <code>.mapValues(...)</code> to summarize those values (sum, avg, list, set, …).</p>
+            </div>
+        </section>
+
+        <section id="warm-ups" class="content-section">
+            <h2>Warm-ups (Toy Data)</h2>
+            
+            <h3>A) See the Shape</h3>
+            <div class="code-block">
+pairs = sc.parallelize([("a",1), ("b",5), ("a",2), ("b",7), ("c",3)])
+grp = pairs.groupByKey()
+# peek (convert only a few to lists for viewing)
+print([(k, list(v)) for k, v in grp.take(3)])
+# expected (order may vary): [('a',[1,2]), ('b',[5,7]), ('c',[3])]
+            </div>
+
+            <h3>B) Sum by Key (After Grouping)</h3>
+            <div class="code-block">
+sums = grp.mapValues(lambda it: sum(it))
+print(sums.collect())    # [('a',3), ('b',12), ('c',3)]
+            </div>
+
+            <h3>C) Count by Key (Two Ways)</h3>
+            <div class="code-block">
+# 1) using values=1
+ones = sc.parallelize([("a",1),("b",1),("a",1),("c",1),("b",1)])
+cnt1 = ones.groupByKey().mapValues(lambda it: sum(it))
+print(cnt1.collect())    # [('a',2), ('b',2), ('c',1)]
+
+# 2) counting the iterable directly
+pairs = sc.parallelize([("a",1),("b",5),("a",2),("b",7),("c",3)])
+cnt2 = pairs.groupByKey().mapValues(lambda it: sum(1 for _ in it))
+print(cnt2.collect())
+            </div>
+
+            <div class="highlight-box">
+                <h4>Exam Tip:</h4>
+                <p>For sum/count/avg, reduceByKey/aggregateByKey is usually faster than groupByKey (less shuffle). We'll still practice groupByKey now so you understand it.</p>
+            </div>
+        </section>
+
+        <section id="telecom-setup" class="content-section">
+            <h2>Set Up Your Telecom RDD</h2>
+            
+            <p>Run this once in your Docker PySpark:</p>
+
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+
+# drop empties + header
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+# columns: 0:id, 1:mobile, 2:gender, 3:senior(Y/N), 4:mode, 5:calls, 6:sms, 7:net, 8:charges, 9:churn(Y/N)
+
+# quick, simple parser (OK for practice). For real CSV with quotes, we'd use csv.reader.
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: 
+        return []   # flatMap-friendly: skip bad rows
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    row = (
+        p[0].strip(),           # id
+        p[1].strip(),           # mobile
+        norm(p[2]),             # gender (M/F/…)
+        norm(p[3]) == "Y",      # senior -> bool
+        norm(p[4]),             # mode -> PREPAID/POSTPAID
+        zint(p[5]),             # calls
+        zint(p[6]),             # sms
+        norm(p[7]),             # net status
+        zfloat(p[8]),           # charges
+        norm(p[9]) == "Y"       # churn -> bool
+    )
+    return [row]
+
+clean = base.flatMap(parse_or_skip)
+print("clean preview:", clean.take(3))
+            </div>
+
+            <p>Clean rows look like: <code>(id, mobile, gender, senior:bool, mode, calls:int|None, sms:int|None, net, charges:float|None, churn:bool)</code></p>
+        </section>
+
+        <section id="telecom-examples" class="content-section">
+            <h2>Easy GroupByKey Examples on Your Data</h2>
+            
+            <h3>1. Churn Count by Gender</h3>
+            <div class="code-block">
+# key as gender, value as 1 only when churned
+kv = clean.map(lambda r: (r[2], 1 if r[9] else 0))
+grp = kv.groupByKey()
+churn_by_gender = grp.mapValues(lambda it: sum(it))
+print(churn_by_gender.collect())
+            </div>
+
+            <h3>2. Average Monthly Charges by Mode (POSTPAID/PREPAID)</h3>
+            <div class="code-block">
+# keep only rows with a numeric charge
+kv = clean.flatMap(lambda r: [] if r[8] is None else [(r[4], r[8])])  # (mode, charge)
+grp = kv.groupByKey()
+
+def mean_iter(it):
+    total = 0.0; n = 0
+    for v in it:
+        total += v; n += 1
+    return (total/n) if n else None
+
+avg_charge_by_mode = grp.mapValues(mean_iter)
+print(avg_charge_by_mode.collect())
+            </div>
+
+            <div class="highlight-box">
+                <h4>Why Single-Pass mean_iter:</h4>
+                <p>In PySpark the values are an iterator-like object — computing both sum(vals) and len(list(vals)) would traverse twice / materialize. Single loop = safer + lighter.</p>
+            </div>
+
+            <h3>3. List a Few Mobiles per Gender (Previewing Grouped Values)</h3>
+            <div class="code-block">
+kv = clean.map(lambda r: (r[2], r[1]))         # (gender, mobile)
+grp = kv.groupByKey(8)                         # example: ask for 8 reduce partitions
+peek = grp.mapValues(lambda it: list(it)[:3])  # ONLY for preview (can use memory)
+print(peek.collect())
+            </div>
+
+            <div class="highlight-box error">
+                <h4>Caution:</h4>
+                <p>Turning it into list(it) for real data can be huge. Only do tiny slices for debugging.</p>
+            </div>
+        </section>
+
+        <section id="explode-group" class="content-section">
+            <h2>"Explode" Then Group: Tags per Customer</h2>
+            
+            <p>This pattern shows flatMap → groupByKey → summarize.</p>
+
+            <div class="code-block">
+ACTIVE = {"ACTIVE","ENABLED","ON"}
+
+def tags_for_row(r):
+    cid, _, gender, senior, mode, calls, sms, net, chg, churn = r
+    tags = []
+    if senior: tags.append("SENIOR")
+    if churn:  tags.append("CHURNED")
+    tags.append(f"MODE_{mode}")
+    tags.append(f"NET_{'ACTIVE' if net in ACTIVE else 'INACTIVE'}")
+    if chg is None: tags.append("CHG_UNK")
+    elif chg < 30:  tags.append("CHG_LOW")
+    elif chg <= 70: tags.append("CHG_MID")
+    else:           tags.append("CHG_HIGH")
+    return [(cid, t) for t in tags]
+
+cust_tags = clean.flatMap(tags_for_row)        # (customer_id, tag)
+grouped_tags = cust_tags.groupByKey()
+
+# join tags per customer into a single string (safe for small previews)
+joined = grouped_tags.mapValues(lambda it: ",".join(list(it)[:5]))  # limit to 5 to avoid huge lines
+print(joined.take(5))
+            </div>
+        </section>
+
+        <section id="partitions" class="content-section">
+            <h2>Controlling Partitions (Reduce Tasks)</h2>
+            
+            <p><code>groupByKey(numPartitions)</code> lets you choose how many reducers handle the grouped data. Helpful when:</p>
+            
+            <ul>
+                <li>You want more parallelism: increase partitions (e.g., 200).</li>
+                <li>You have a tiny dataset: fewer partitions can reduce overhead.</li>
+            </ul>
+
+            <div class="code-block">
+kv = clean.map(lambda r: (r[4], r[8])).flatMap(lambda kv: [] if kv[1] is None else [kv])
+grp_32 = kv.groupByKey(32)
+avg_32 = grp_32.mapValues(mean_iter).collect()
+            </div>
+        </section>
+
+        <section id="gotchas" class="content-section">
+            <h2>Gotchas & Exam-Friendly Notes</h2>
+            
+            <div class="highlight-box error">
+                <h4>Heavy Shuffle:</h4>
+                <p>groupByKey moves all values for each key over the network. For sums/averages, prefer reduceByKey/aggregateByKey (combine in-map first). But still know groupByKey for questions that need the full value list.</p>
+            </div>
+
+            <h3>Skewed Keys</h3>
+            <p>If one key has most rows, its reducer may OOM or be slow ("straggler"). Fixes (general awareness):</p>
+            <ul>
+                <li>Increase partitions (groupByKey(n)).</li>
+                <li>Salt the key (advanced), or avoid grouping huge lists; switch to reducers that aggregate.</li>
+            </ul>
+
+            <h3>Iterator Behavior</h3>
+            <p>In PySpark the grouped values are an iterator-like object.</p>
+            <ul>
+                <li>Consume it once in a single pass when possible (like mean_iter).</li>
+                <li>Converting to list(it) materializes everything → memory risk.</li>
+            </ul>
+
+            <h3>Order</h3>
+            <p>Values within a key are not guaranteed to be ordered.</p>
+
+            <h3>Debugging</h3>
+            <p>Only materialize tiny samples ([:3]) for viewing.</p>
+        </section>
+
+        <section id="practice" class="content-section">
+            <h2>Practice (One at a Time)</h2>
+            
+            <h3>Q1. Churn Count by Mode</h3>
+            <p>Build (mode, 1 if churn else 0) → groupByKey() → sum.</p>
+            <div class="code-block">
+kv = clean.map(lambda r: (r[4], 1 if r[9] else 0))
+res = kv.groupByKey().mapValues(lambda it: sum(it))
+print(res.collect())
+            </div>
+
+            <h3>Q2. Average Calls by Gender (Treat None as "Skip")</h3>
+            <div class="code-block">
+kv = clean.flatMap(lambda r: [] if r[5] is None else [(r[2], r[5])])
+res = kv.groupByKey().mapValues(mean_iter)
+print(res.collect())
+            </div>
+
+            <h3>Q3. For Each Internet Status, List Up to 3 Customer IDs</h3>
+            <div class="code-block">
+ACTIVE = {"ACTIVE","ENABLED","ON"}
+kv = clean.map(lambda r: ("ACTIVE" if r[7] in ACTIVE else "INACTIVE", r[0]))
+grp = kv.groupByKey()
+peek = grp.mapValues(lambda it: list(it)[:3])
+print(peek.collect())
+            </div>
+        </section>
+        
+        <div class="topic-navigation">
+            <div>
+                <a href="mapvalues.html" class="nav-link">
+                    ← Previous: MapValues
+                </a>
+            </div>
+            <div>
+                <a href="join.html" class="nav-link">
+                    Next: Join Operations →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark FlatMap Operations - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#map-vs-flatmap">Map vs FlatMap</a>
+                <a href="#examples">Examples</a>
+                <a href="#practice">Practice</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>FlatMap Operations</h1>
+            <p>Understand the difference between map and flatMap, and when to use each</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="map.html">Map Operations</a> / FlatMap Operations
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#map-vs-flatmap">Map vs FlatMap</a></li>
+                <li><a href="#basic-examples">Basic Examples</a></li>
+                <li><a href="#csv-parsing">Parse or Skip Pattern</a></li>
+                <li><a href="#exploding-data">Exploding Data</a></li>
+                <li><a href="#generators">Using Generators</a></li>
+                <li><a href="#edge-cases">Edge Cases & Gotchas</a></li>
+                <li><a href="#practice">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="map-vs-flatmap" class="content-section">
+            <h2>Map vs FlatMap</h2>
+            
+            <div class="highlight-box">
+                <h4>Key Differences:</h4>
+                <ul>
+                    <li><strong>map(f):</strong> 1 input → exactly 1 output (same number of elements before/after)</li>
+                    <li><strong>flatMap(f):</strong> 1 input → 0, 1, or many outputs (count can shrink or grow)</li>
+                </ul>
+            </div>
+
+            <p>Think of flatMap as: "map and then flatten".</p>
+
+            <h3>Tiny Toy Examples</h3>
+            <div class="code-block">
+nums = sc.parallelize([1, 2, 3])
+
+# map: one out per in
+print(nums.map(lambda x: [x, x]).collect())
+# => [[1, 1], [2, 2], [3, 3]]
+
+# flatMap: flattens the lists, so many outs per in
+print(nums.flatMap(lambda x: [x, x]).collect())
+# => [1, 1, 2, 2, 3, 3]
+
+# flatMap can also output zero elements for some inputs
+print(nums.flatMap(lambda x: [] if x == 2 else [x]).collect())
+# => [1, 3]
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>Key Rule:</h4>
+                <p>flatMap's function must return an iterable (list/tuple/generator). If it returns None, Spark will error ("NoneType is not iterable").</p>
+            </div>
+        </section>
+
+        <section id="basic-examples" class="content-section">
+            <h2>Basic Examples</h2>
+            
+            <h3>Set Up Your RDD</h3>
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+
+# Drop empties
+non_empty = rdd.filter(lambda l: l and l.strip())
+
+# Remove header explicitly
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+print("base preview:", base.take(3))
+            </div>
+
+            <div class="highlight-box">
+                <h4>Column Layout (0-based):</h4>
+                <p>0:CustomerID, 1:Mobile, 2:Gender, 3:Senior, 4:Mode, 5:Calls, 6:SMS, 7:InternetStatus, 8:MonthlyCharges, 9:Churn</p>
+            </div>
+        </section>
+
+        <section id="csv-parsing" class="content-section">
+            <h2>FlatMap to Parse-or-Skip (0-or-1 row from each line)</h2>
+            
+            <p>With map, you'd return a tuple (or None) and then filter out None. With flatMap, you can return [] (skip) or [tuple] (keep) in one shot.</p>
+
+            <div class="code-block">
+def parse_or_skip(line):
+    parts = line.split(",")
+    if len(parts) < 10:
+        return []                     # skip malformed
+    
+    # Normalize helpers
+    def nz_int(s):
+        try: return int(s.strip())
+        except: return None
+    
+    def nz_float(s):
+        try: return float(s.strip())
+        except: return None
+    
+    def norm(s):
+        return (s or "").strip().upper()
+
+    row = (
+        parts[0].strip(),             # customer_id
+        parts[1].strip(),             # mobile
+        norm(parts[2]),               # gender
+        norm(parts[3]) == "Y",        # senior -> bool
+        norm(parts[4]),               # mode
+        nz_int(parts[5]),             # calls
+        nz_int(parts[6]),             # sms
+        norm(parts[7]),               # internet status
+        nz_float(parts[8]),           # monthly charges
+        norm(parts[9]) == "Y",        # churn -> bool
+    )
+    return [row]                      # keep: one parsed row
+
+clean = base.flatMap(parse_or_skip)
+print("clean preview:", clean.take(3))
+print("clean count:", clean.count())
+            </div>
+
+            <div class="highlight-box success">
+                <h4>Why This is Nice:</h4>
+                <ul>
+                    <li>No extra filter step to remove None</li>
+                    <li>If a line is bad → zero outputs, good lines → one output</li>
+                    <li>Clean and efficient pattern</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="exploding-data" class="content-section">
+            <h2>FlatMap to Explode Per-Row Lists (Many Rows from One Row)</h2>
+            
+            <p>Say you want, for each customer, one output per "metric" present (e.g., calls and sms). If a metric is missing → emit nothing for it. That's a classic flatMap.</p>
+
+            <div class="code-block">
+# clean row shape: (id, mobile, gender, senior, mode, calls, sms, net, charges, churn)
+def to_metrics(row):
+    cust_id, *_ = row
+    calls, sms = row[5], row[6]
+    out = []
+    if calls is not None:
+        out.append((cust_id, ("CALLS", calls)))
+    if sms is not None:
+        out.append((cust_id, ("SMS", sms)))
+    return out
+
+metrics = clean.flatMap(to_metrics)
+print("metrics preview:", metrics.take(5))
+# e.g. [('C001', ('CALLS', 42)), ('C001', ('SMS', 7)), ('C002', ('CALLS', 10)), ...]
+            </div>
+
+            <div class="highlight-box">
+                <h4>Notice:</h4>
+                <p>One input row → 0, 1, or 2 outputs depending on which fields exist. That's exactly the power of flatMap.</p>
+            </div>
+        </section>
+
+        <section id="generators" class="content-section">
+            <h2>Using Generator Functions with FlatMap (Memory-Friendly)</h2>
+            
+            <p>Returning big Python lists can use extra memory. A generator yields items one by one.</p>
+
+            <div class="code-block">
+# Generator version of parse-or-skip
+def gen_parse_or_skip(line):
+    parts = line.split(",")
+    if len(parts) < 10:
+        return   # since this function has 'yield' below, an early 'return' yields nothing (okay)
+    
+    # (same parsing as before...)
+    def nz_int(s):
+        try: return int(s.strip())
+        except: return None
+    def nz_float(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    
+    row = (parts[0].strip(), parts[1].strip(), norm(parts[2]),
+           norm(parts[3])=="Y", norm(parts[4]),
+           nz_int(parts[5]), nz_int(parts[6]), norm(parts[7]),
+           nz_float(parts[8]), norm(parts[9])=="Y")
+    yield row
+
+clean2 = base.flatMap(gen_parse_or_skip)
+print(clean2.take(3))
+            </div>
+
+            <div class="highlight-box">
+                <h4>Important:</h4>
+                <p>A function with yield anywhere is a generator function. Even if you hit return early, Spark still gets an iterable (that yields nothing).</p>
+            </div>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>Edge Cases & Gotchas</h2>
+            
+            <div class="highlight-box error">
+                <h4>Don't Lose Marks - Avoid These:</h4>
+                <ul>
+                    <li><strong>Must return an iterable:</strong> flatMap expects a list/tuple/generator. <code>return None</code> → ❌ error. Use <code>return []</code> or a generator that yields nothing.</li>
+                    <li><strong>0 outputs are fine:</strong> That's a feature—use it to skip bad lines naturally.</li>
+                    <li><strong>Order not guaranteed:</strong> Like all RDD ops, don't rely on global order.</li>
+                    <li><strong>Heavy work per element:</strong> Keep the work inside flatMap light; expensive parsing is OK but avoid I/O or big object creation for each row.</li>
+                    <li><strong>Debugging:</strong> Printing inside flatMap runs on workers and is often hidden. Use <code>take(n)</code> to preview results.</li>
+                </ul>
+            </div>
+
+            <h3>FlatMap vs Map + Filter</h3>
+            <div class="highlight-box">
+                <h4>When to Use Which:</h4>
+                <ul>
+                    <li>If you always have exactly one good output per input → <strong>map</strong> (+ filter for invalid)</li>
+                    <li>If it's natural to output 0..n items → <strong>flatMap</strong></li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="practice" class="content-section">
+            <h2>Practice Exercise</h2>
+            
+            <p><strong>Goal:</strong> Using flatMap only (plus filter for simple selections), produce one row per "tag" for senior churned customers.</p>
+
+            <h3>Steps:</h3>
+            <ol>
+                <li>Build <code>clean</code> with <code>flatMap(parse_or_skip)</code> from base.</li>
+                <li>Filter to senior AND churned (<code>row[3] == True</code> and <code>row[9] == True</code>). Call it <code>sc_rows</code>.</li>
+                <li>For each row in <code>sc_rows</code>, produce a list of tags:
+                    <ul>
+                        <li>"MODE_&lt;mode&gt;" (e.g., MODE_POSTPAID)</li>
+                        <li>"NET_&lt;ACTIVE/INACTIVE&gt;" (ACTIVE if status in {"ACTIVE","ENABLED","ON"}, else INACTIVE)</li>
+                        <li>"CHG_&lt;LOW/MID/HIGH/UNK&gt;" from charges: &lt;30=LOW, 30–70=MID, &gt;70=HIGH, None=UNK</li>
+                    </ul>
+                </li>
+                <li>Use flatMap to turn each row into (customer_id, tag) for every tag.</li>
+                <li>Name the result RDD <code>cust_tags</code>.</li>
+                <li>Show <code>cust_tags.take(10)</code>.</li>
+            </ol>
+
+            <h3>Skeleton to Fill:</h3>
+            <div class="code-block">
+clean = base.flatMap(parse_or_skip)
+
+sc_rows = clean.filter(lambda r: r[3] and r[9])  # senior & churned
+
+ACTIVE = {"ACTIVE","ENABLED","ON"}
+def tags_from_row(row):
+    cust_id, mobile, gender, senior, mode, calls, sms, net, charges, churn = row
+    tags = []
+    tags.append(f"MODE_{mode}")
+    tags.append(f"NET_{'ACTIVE' if net in ACTIVE else 'INACTIVE'}")
+    if charges is None: tags.append("CHG_UNK")
+    elif charges < 30:  tags.append("CHG_LOW")
+    elif charges <= 70: tags.append("CHG_MID")
+    else:               tags.append("CHG_HIGH")
+    # return an iterable of (customer_id, tag)
+    return [(cust_id, t) for t in tags]
+
+cust_tags = sc_rows.flatMap(tags_from_row)
+print(cust_tags.take(10))
+            </div>
+        </section>
+
+        <div class="topic-navigation">
+            <div>
+                <a href="map.html" class="nav-link">
+                    ← Previous: Map Operations
+                </a>
+            </div>
+            <div>
+                <a href="reduce.html" class="nav-link">
+                    Next: Reduce Operations →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

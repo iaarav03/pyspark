@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Basics - Complete Guide to Getting Started</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#basics">Basics</a>
+                <a href="#rdd-creation">RDD Creation</a>
+                <a href="#data-loading">Data Loading</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>PySpark Basics</h1>
+            <p>Master the fundamentals of Apache Spark with Python - RDD creation, data loading, and core concepts</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / PySpark Basics
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#rdd-creation">RDD Creation and Loading Data</a></li>
+                <li><a href="#basic-operations">Basic Operations</a></li>
+                <li><a href="#multi-line-functions">Multi-line Functions in PySpark</a></li>
+                <li><a href="#exec-function">Understanding exec() Function</a></li>
+                <li><a href="#string-vs-list">Understanding Data Types in RDDs</a></li>
+                <li><a href="#saving-results">Saving Results</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+
+        <section id="rdd-creation" class="content-section">
+            <h2>RDD Creation and Loading Data</h2>
+            
+            <h3>Loading CSV Files as RDD</h3>
+            <p>We'll work with a telecom dataset (TelecomData.csv) to learn PySpark fundamentals. Here's how to load and create your first RDD:</p>
+
+            <div class="code-block">
+# Load the CSV file as RDD
+# sc = SparkContext (already running in PySpark shell or Colab)
+# It creates an RDD (Resilient Distributed Dataset)
+# Each element in this RDD is one line (a string)
+
+rdd = sc.textFile("/data/TelecomData.csv")
+print("RDD created successfully!")
+print("First row:", rdd.first())
+
+# Get total row count
+print("Total number of rows:", rdd.count())
+
+# Output:
+# RDD created successfully!
+# First row: CustomerID,Mobile Number,Gender,SeniorCitizen Flag,...
+# Total number of rows: 1001
+            </div>
+
+            <div class="highlight-box">
+                <h4>Key Points:</h4>
+                <ul>
+                    <li><strong>SparkContext (sc)</strong> is your entry point to Spark functionality</li>
+                    <li><strong>textFile()</strong> creates an RDD where each element is one line from the file</li>
+                    <li><strong>RDD elements are strings</strong>, not lists or parsed data</li>
+                    <li>Operations like <code>first()</code> and <code>count()</code> are actions that trigger computation</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="basic-operations" class="content-section">
+            <h2>Basic Operations</h2>
+            
+            <h3>Understanding RDD Elements</h3>
+            <p>It's crucial to understand that <code>sc.textFile()</code> returns strings, not lists:</p>
+
+            <div class="code-block">
+# Let's examine what sc.textFile actually returns
+sample = rdd.first()
+print("Type of sample:", type(sample))
+print("Sample value:", sample)
+print("Is it a string?", isinstance(sample, str))
+print("Is it a list?", isinstance(sample, list))
+            </div>
+
+            <p>You'll see that sample is a string, not a list!</p>
+
+            <h3>How sc.textFile() Works</h3>
+            <div class="code-block">
+# sc.textFile() reads each LINE as a separate STRING
+rdd = sc.textFile("/data/TelecomData.csv")
+
+# Each element in the RDD is one line (as a string)
+first_line = rdd.first()
+print("First line:", repr(first_line))  # Shows quotes around it
+print("Length:", len(first_line))
+            </div>
+        </section>
+
+        <section id="multi-line-functions" class="content-section">
+            <h2>Multi-line Functions in PySpark</h2>
+            
+            <p>In the PySpark shell, there are several ways to write multi-line functions. Here are the most effective methods:</p>
+
+            <h3>Method 1: Multi-line Function Definition (Recommended)</h3>
+            <p>In PySpark shell, when you type <code>def</code>, it automatically enters multi-line mode:</p>
+
+            <div class="code-block">
+>>> def monthly_charge_gt(line, threshold=50.0):
+...     if not line or not line.strip():
+...         return False
+...     parts = line.split(",")
+...     if len(parts) < 9:
+...         return False
+...     try:
+...         charge = float(parts[8].strip())
+...     except Exception:
+...         return False
+...     return charge > threshold
+... 
+>>> # Press Enter twice to finish the function
+            </div>
+
+            <div class="highlight-box">
+                <h4>Notice the <code>...</code> prompt</h4>
+                <p>This means Python is waiting for more lines. Press Enter twice when you're done.</p>
+            </div>
+
+            <h3>Method 2: Using exec() for Complex Functions</h3>
+            <div class="code-block">
+>>> exec("""
+def monthly_charge_gt(line, threshold=50.0):
+    if not line or not line.strip():
+        return False
+    parts = line.split(",")
+    if len(parts) < 9:
+        return False
+    try:
+        charge = float(parts[8].strip())
+    except Exception:
+        return False
+    return charge > threshold
+""")
+            </div>
+
+            <h3>Using Your Function</h3>
+            <p>Try this step by step in your PySpark shell:</p>
+
+            <div class="code-block">
+# Method 1: Define the function (press Enter twice at the end)
+def monthly_charge_gt(line, threshold=50.0):
+    if not line or not line.strip():
+        return False
+    parts = line.split(",")
+    if len(parts) < 9:
+        return False
+    try:
+        charge = float(parts[8].strip())
+    except Exception:
+        return False
+    return charge > threshold
+
+# Test the function first
+sample = rdd.first()
+print("Testing function:", monthly_charge_gt(sample))
+
+# Apply filter
+high_payers = rdd.filter(monthly_charge_gt)
+print("High payers count:", high_payers.count())
+print("High payers preview:", high_payers.take(3))
+
+# With different threshold
+thresh = 80.0
+high80 = rdd.filter(lambda line: monthly_charge_gt(line, threshold=thresh))
+print("Charge > 80 count:", high80.count())
+print("Charge > 80 preview:", high80.take(3))
+            </div>
+        </section>
+
+        <section id="exec-function" class="content-section">
+            <h2>Understanding exec() Function</h2>
+            
+            <h3>What is exec()?</h3>
+            <p><code>exec()</code> is a built-in Python function that executes Python code dynamically. It takes a string containing Python code and runs it as if you typed it directly.</p>
+
+            <h4>Basic Syntax:</h4>
+            <div class="code-block">
+exec(code_string)
+
+# Example 1: Simple execution
+exec("print('Hello from exec!')")
+
+# Example 2: Variable assignment
+exec("x = 10")
+print(x)  # This will print 10
+
+# Example 3: Multiple statements
+exec("""
+y = 5
+z = y * 2
+print(f'y = {y}, z = {z}')
+""")
+            </div>
+
+            <h3>Why Use exec() in PySpark Shell?</h3>
+            <div class="highlight-box success">
+                <h4>Advantages:</h4>
+                <ul>
+                    <li>✅ Easy to paste multi-line code blocks</li>
+                    <li>✅ No need to worry about indentation in interactive mode</li>
+                    <li>✅ Can define complex functions quickly</li>
+                </ul>
+            </div>
+
+            <h3>More exec() Examples</h3>
+            <div class="code-block">
+# Create multiple functions at once
+exec("""
+def add(a, b):
+    return a + b
+
+def multiply(a, b):
+    return a * b
+
+def greet(name):
+    return f'Hello, {name}!'
+""")
+
+# Test them
+print(add(5, 3))
+print(multiply(4, 7))
+print(greet("PySpark User"))
+            </div>
+        </section>
+
+        <section id="string-vs-list" class="content-section">
+            <h2>Understanding Data Types in RDDs</h2>
+            
+            <div class="highlight-box warning">
+                <h4>The Key Point: sc.textFile() returns STRINGS, not lists!</h4>
+            </div>
+
+            <div class="code-block">
+# Let's examine what sc.textFile actually returns
+sample = rdd.first()
+print("Type of sample:", type(sample))
+print("Sample value:", sample)
+print("Is it a string?", isinstance(sample, str))
+print("Is it a list?", isinstance(sample, list))
+            </div>
+
+            <h3>How Your Function Receives Data</h3>
+            <div class="code-block">
+def monthly_charge_gt(line, threshold=50.0):  # 'line' is a STRING
+    if not line or not line.strip():          # String methods
+        return False
+    parts = line.split(",")                   # .split() converts STRING to LIST
+    if len(parts) < 9:                        # Now 'parts' is a list
+        return False
+    # ... rest of function
+            </div>
+
+            <h3>How sc.textFile() Works:</h3>
+            <div class="code-block">
+# sc.textFile() reads each LINE as a separate STRING
+rdd = sc.textFile("/data/TelecomData.csv")
+
+# Each element in the RDD is one line (as a string)
+first_line = rdd.first()
+print("First line:", repr(first_line))  # Shows quotes around it
+print("Length:", len(first_line))
+            </div>
+        </section>
+
+        <section id="saving-results" class="content-section">
+            <h2>Saving Results</h2>
+            
+            <h3>Basic Saving</h3>
+            <div class="code-block">
+# Save filtered results
+FilteredRDD.saveAsTextFile("/path/to/FilterOutput")
+            </div>
+
+            <div class="highlight-box">
+                <h4>Explanation:</h4>
+                <ul>
+                    <li><code>saveAsTextFile("...")</code> writes RDD to a folder</li>
+                    <li>Spark writes many part files (one per partition)</li>
+                    <li>Path must not already exist, or Spark throws an error</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="function-patterns" class="content-section">
+            <h2>Function Patterns and Filter Usage</h2>
+            
+            <h3>1) What does filter expect?</h3>
+            <p>filter expects a function that takes one element and returns True/False.</p>
+            <p>Think of it like: "Dear filter, here's my rule f. Please keep every x where f(x) is True."</p>
+
+            <p>So all of these are okay:</p>
+            <div class="code-block">
+# A. pass a named function that already matches the expected signature f(x)->bool
+rdd.filter(is_good_row)
+
+# B. pass a lambda that implements the rule inline
+rdd.filter(lambda x: <some condition on x>)
+
+# C. pass a lambda that CALLS another function with extra parameters
+rdd.filter(lambda x: my_rule(x, extra=123))
+            </div>
+
+            <h3>2) Four common ways to give filter a predicate</h3>
+            <p>Assume we have a named function:</p>
+            <div class="code-block">
+def monthly_charge_gt(line, threshold=50.0):
+    # very basic guard: return False on bad lines
+    if not line or not line.strip():
+        return False
+    parts = line.split(",")
+    if len(parts) <= 8:
+        return False
+    try:
+        charge = float(parts[8].strip())
+    except Exception:
+        return False
+    return charge > threshold
+            </div>
+
+            <p>Now the 4 patterns:</p>
+            <div class="code-block">
+# A) Pass the named function directly (no extra args)
+high_default = rdd.filter(monthly_charge_gt)      # uses threshold=50.0
+
+# B) Wrap it in a lambda to supply extra arguments
+high_80 = rdd.filter(lambda line: monthly_charge_gt(line, threshold=80.0))
+
+# C) Use a broadcast var (good if the "extra" is large or shared config)
+b_thresh = sc.broadcast(80.0)
+high_b = rdd.filter(lambda line: monthly_charge_gt(line, threshold=b_thresh.value))
+
+# D) Use functools.partial (clean way to "pre-fill" args)
+from functools import partial
+pred_gt80 = partial(monthly_charge_gt, threshold=80.0)
+high_p = rdd.filter(pred_gt80)
+            </div>
+
+            <h3>3) Very important: "passing a function" vs "calling a function now"</h3>
+            <div class="highlight-box success">
+                <h4>✅ Pass the function (no parentheses):</h4>
+                <code>rdd.filter(monthly_charge_gt)</code>
+                <p>Spark will call it later for each element.</p>
+            </div>
+
+            <div class="highlight-box error">
+                <h4>❌ Don't call it immediately:</h4>
+                <code>rdd.filter(monthly_charge_gt())</code>
+                <p>This calls the function right now (with no argument), returns a boolean (or errors), and you end up passing a boolean to filter — wrong.</p>
+            </div>
+
+            <p>In lambdas, the call belongs inside the lambda:</p>
+            <div class="code-block">
+rdd.filter(lambda line: monthly_charge_gt(line, 80.0)) ✅
+            </div>
+
+            <h3>4) Closures & the "late-binding" gotcha (classic beginner trap)</h3>
+            <div class="code-block">
+threshold = 80.0
+pred = lambda line: monthly_charge_gt(line, threshold=threshold)
+# If you later do threshold = 100.0 before the job runs,
+# the lambda will use the NEW value (100.0), not 80.0.
+            </div>
+
+            <h4>Two safe fixes:</h4>
+            <div class="code-block">
+# Default-arg trick (freezes the value at definition time):
+pred = lambda line, t=threshold: monthly_charge_gt(line, threshold=t)
+
+# partial (also freezes the value):
+from functools import partial
+pred = partial(monthly_charge_gt, threshold=threshold)
+            </div>
+
+            <p>This also matters in loops:</p>
+            <div class="code-block">
+preds = []
+for t in [50, 70, 90]:
+    preds.append(lambda line: monthly_charge_gt(line, threshold=t))     # ❌ all use 90 later
+
+preds = []
+for t in [50, 70, 90]:
+    preds.append(lambda line, tt=t: monthly_charge_gt(line, threshold=tt))  # ✅ 50, 70, 90 captured
+            </div>
+        </section>
+
+        <section id="best-practices" class="content-section">
+            <h2>Best Practices and Common Patterns</h2>
+            
+            <h3>5) Return values & truthiness (be explicit)</h3>
+            <p>filter accepts any "truthy" result:</p>
+            <ul>
+                <li><strong>falsy:</strong> False, None, 0, "", [], {}</li>
+                <li><strong>truthy:</strong> most other values</li>
+            </ul>
+            <p>Best practice: make your predicate return True/False, not a random value, to avoid confusion.</p>
+
+            <div class="code-block">
+# Bad (ambiguous):
+rdd.filter(lambda x: x)   # keeps truthy elements only
+
+# Good (explicit):
+rdd.filter(lambda x: isinstance(x, str) and x != "")
+            </div>
+
+            <h3>6) Exceptions inside your predicate</h3>
+            <p>If your predicate raises an exception (e.g., float("N/A")), the Spark task fails.</p>
+            <p>Safest: handle errors inside your named function and return False:</p>
+
+            <div class="code-block">
+def monthly_charge_gt(line, threshold=50.0):
+    try:
+        # parse...
+        return charge > threshold
+    except Exception:
+        return False
+            </div>
+
+            <h3>7) Serialization & where to define functions (Spark detail)</h3>
+            <ul>
+                <li>Spark must serialize (pickle) your predicate to ship it to workers</li>
+                <li>Define functions at top level (not nested inside other functions) when possible</li>
+                <li>Avoid capturing huge objects in closures (e.g., big dicts). If needed, use a broadcast:</li>
+            </ul>
+
+            <div class="code-block">
+big_dict = {...}                 # huge
+b = sc.broadcast(big_dict)       # ship once
+rdd.filter(lambda line: use(b.value, line))
+            </div>
+
+            <h3>8) Performance notes</h3>
+            <ul>
+                <li>Your predicate runs for every row. Keep it simple and fast</li>
+                <li>Repeated heavy parsing within the predicate can be slow</li>
+                <li>Always preview with take(n); avoid collect() on large outputs</li>
+            </ul>
+
+            <h3>9) Tiny step-through with your dataset path (safe preview)</h3>
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+header = rdd.first()
+
+def monthly_charge_gt(line, threshold=80.0):
+    if not line or line == header:           # drop header here for simplicity
+        return False
+    parts = line.split(",")
+    if len(parts) <= 8:
+        return False
+    try:
+        return float(parts[8].strip()) > threshold
+    except Exception:
+        return False
+
+# 1) direct
+high_default = rdd.filter(monthly_charge_gt)          # > 80 by default
+print(high_default.take(3))
+
+# 2) lambda with constant
+high_90 = rdd.filter(lambda line: monthly_charge_gt(line, threshold=90.0))
+print(high_90.take(3))
+
+# 3) broadcast (overkill for a float, but shows the pattern)
+b_thresh = sc.broadcast(85.0)
+high_b = rdd.filter(lambda line: monthly_charge_gt(line, threshold=b_thresh.value))
+print(high_b.take(3))
+
+# 4) partial
+from functools import partial
+pred_gt70 = partial(monthly_charge_gt, threshold=70.0)
+high_70 = rdd.filter(pred_gt70)
+print(high_70.take(3))
+            </div>
+
+            <h3>Quick "Do / Don't" recap</h3>
+            <div class="highlight-box success">
+                <h4>Do:</h4>
+                <ul>
+                    <li>Pass a predicate function (f(x)->bool) to filter</li>
+                    <li>Use lambda to call a named function with extra args</li>
+                    <li>Freeze closure values via default args or partial</li>
+                    <li>Handle errors inside your predicate; return False on bad rows</li>
+                    <li>Define functions at top level; use broadcast for large shared data</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box error">
+                <h4>Don't:</h4>
+                <ul>
+                    <li>Don't call your function immediately when passing it (filter(f()) ❌)</li>
+                    <li>Don't rely on truthiness unless you really mean it</li>
+                    <li>Don't capture mutable globals you later change (late-binding surprise)</li>
+                </ul>
+            </div>
+        </section>
+
+        <div class="topic-navigation">
+            <div class="nav-link disabled">
+                ← Previous Topic
+            </div>
+            <div>
+                <a href="filter.html" class="nav-link">
+                    Next: Filter Operations →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

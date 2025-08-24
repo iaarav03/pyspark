@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Filter Operations - Complete Guide to Data Filtering</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#basics">Filter Basics</a>
+                <a href="#patterns">Patterns</a>
+                <a href="#examples">Examples</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>Filter Operations</h1>
+            <p>Master data filtering with conditions, lambda functions, and complex predicates in PySpark</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="basic.html">PySpark Basics</a> / Filter Operations
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-is-filter">What is Filter?</a></li>
+                <li><a href="#basic-examples">Basic Examples</a></li>
+                <li><a href="#filtering-csv">Filtering CSV Data</a></li>
+                <li><a href="#robust-filtering">Robust Filtering</a></li>
+                <li><a href="#numeric-filtering">Numeric Filtering</a></li>
+                <li><a href="#function-patterns">Function Patterns</a></li>
+                <li><a href="#performance-tips">Performance Tips</a></li>
+                <li><a href="#practice-exercises">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="what-is-filter" class="content-section">
+            <h2>What is Filter in Spark RDD?</h2>
+            
+            <p><code>filter(func)</code> is a transformation on an RDD that takes a function <code>func</code> that returns True or False for each element. Spark keeps only those elements where the function returns True.</p>
+
+            <div class="highlight-box">
+                <h4>Think of it like a sieve:</h4>
+                <p>Rows go in, only rows that pass the condition come out.</p>
+            </div>
+
+            <h3>Simple Example with Numbers</h3>
+            <div class="code-block">
+nums = sc.parallelize([1, 2, 3, 4, 5])
+evens = nums.filter(lambda x: x % 2 == 0)
+print(evens.collect())   # [2, 4]
+            </div>
+
+            <h3>What Filter Does (General)</h3>
+            <ul>
+                <li><code>filter(func)</code> keeps items where <code>func(item)</code> returns True</li>
+                <li>In Spark RDDs, <code>func</code> runs on each partition, in parallel</li>
+                <li>It's a transformation (lazy) - won't execute until an action is called</li>
+            </ul>
+
+            <h3>Quick Toy Practice</h3>
+            <div class="code-block">
+nums = sc.parallelize([0,1,2,3,4,5,6])
+evens = nums.filter(lambda x: x % 2 == 0)
+print(evens.collect())  # [0, 2, 4, 6]
+            </div>
+
+            <h3>Edge Cases</h3>
+            <div class="code-block">
+# Non-boolean return uses truthiness rules:
+mixed = sc.parallelize([0,1,2,"", "hi", []])
+print(mixed.filter(lambda x: x).collect())  # [1, 2, 'hi']
+
+# Empty RDD/filter → empty result (no error)
+# If your lambda raises an error (e.g., comparing int to str) the task fails
+            </div>
+        </section>
+
+        <section id="basic-examples" class="content-section">
+            <h2>Basic Filtering Examples</h2>
+            
+            <h3>Drop Empty/Whitespace Lines</h3>
+            <div class="code-block">
+# .strip() removes whitespace; empty strings are falsy
+non_empty = rdd.filter(lambda line: line is not None and line.strip())
+print("Non-empty count:", non_empty.count())
+print(non_empty.take(3))
+            </div>
+
+            <h3>Drop the Header (Classic Pattern)</h3>
+            <div class="code-block">
+header = non_empty.first()                    # first line (likely the header row)
+data_no_header = non_empty.filter(lambda line: line != header)
+print("After header removal:", data_no_header.take(3))
+            </div>
+
+            <div class="highlight-box">
+                <h4>Why Remove Header First?</h4>
+                <p>Headers can accidentally pass other filters. Remove it explicitly first for clean data processing.</p>
+            </div>
+        </section>
+
+        <section id="filtering-csv" class="content-section">
+            <h2>Column-Based Filters Using Lambda</h2>
+            
+            <p>Your CSV columns (0-based indexes):</p>
+            <div class="highlight-box">
+                <strong>Column Layout:</strong><br>
+                0: CustomerID, 1: Mobile Number, 2: Gender, 3: SeniorCitizen Flag, 
+                4: Mode, 5: Calls, 6: SMS, 7: Internet Service Status, 
+                8: MonthlyCharges, 9: CustomerChurn Flag
+            </div>
+
+            <h3>Keep Only Churned Customers (Column 9 == "Y")</h3>
+            <div class="code-block">
+churned = data_no_header.filter(
+    lambda line: len(line.split(",")) > 9 and line.split(",")[9].strip().upper() == "Y"
+)
+print("Churned preview:", churned.take(3))
+print("Churned count:", churned.count())
+            </div>
+
+            <h3>Keep Only Senior Citizens (Column 3 == "Y")</h3>
+            <div class="code-block">
+seniors = data_no_header.filter(
+    lambda line: len(line.split(",")) > 3 and line.split(",")[3].strip().upper() == "Y"
+)
+print("Seniors preview:", seniors.take(3))
+print("Seniors count:", seniors.count())
+            </div>
+
+            <h3>Both Senior and Churned</h3>
+            <div class="code-block">
+senior_churn = data_no_header.filter(
+    lambda line: (
+        (lambda cols: len(cols) > 9 and 
+         cols[3].strip().upper() == "Y" and 
+         cols[9].strip().upper() == "Y")(line.split(","))
+    )
+)
+print("Senior+Churn preview:", senior_churn.take(3))
+print("Senior+Churn count:", senior_churn.count())
+            </div>
+
+            <div class="highlight-box">
+                <h4>Note:</h4>
+                <p>We split only once in that lambda by using an inner lambda; still a one-liner.</p>
+            </div>
+        </section>
+
+        <section id="robust-filtering" class="content-section">
+            <h2>Robust Filtering (Handling Edge Cases)</h2>
+            
+            <p>Sometimes rows are malformed, values have spaces, or cases vary. You can't write try/except inside a lambda, so use a named function:</p>
+
+            <div class="code-block">
+def is_senior_and_churn(line):
+    if not line or not line.strip():
+        return False
+    # Guard header heuristically (common trick)
+    if "Senior" in line and "Churn" in line:
+        return False
+    parts = line.split(",")
+    if len(parts) < 10:
+        return False
+    sflag = parts[3].strip().upper()
+    cflag = parts[9].strip().upper()
+    return sflag == "Y" and cflag == "Y"
+
+robust_senior_churn = rdd.filter(is_senior_and_churn)
+print("Robust senior+churn (take):", robust_senior_churn.take(3))
+print("Robust count:", robust_senior_churn.count())
+            </div>
+
+            <div class="highlight-box success">
+                <h4>Why This Pattern is Good:</h4>
+                <ul>
+                    <li>Handles empty lines/header/short rows safely</li>
+                    <li>Normalizes case & whitespace</li>
+                    <li>Returns True/False explicitly (no truthiness ambiguity)</li>
+                    <li>All logic is testable and readable</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="numeric-filtering" class="content-section">
+            <h2>Filtering with Numbers Safely</h2>
+            
+            <div class="highlight-box warning">
+                <h4>Common Exam Trap!</h4>
+                <p>If you need to compare numeric columns (e.g., MonthlyCharges > 50), doing <code>float(parts[8])</code> inside a lambda may raise ValueError on bad data. Use a named function with try/except.</p>
+            </div>
+
+            <div class="code-block">
+def monthly_charge_gt(line, threshold=50.0):
+    if not line or not line.strip():
+        return False
+    parts = line.split(",")
+    if len(parts) < 9:
+        return False
+    try:
+        charge = float(parts[8].strip())
+    except Exception:
+        return False
+    return charge > threshold
+
+high_payers = rdd.filter(monthly_charge_gt)            # uses default 50.0
+print("High payers preview:", high_payers.take(3))
+
+# Change threshold using a closure:
+thresh = 80.0
+high80 = rdd.filter(lambda line: monthly_charge_gt(line, threshold=thresh))
+print("Charge > 80 preview:", high80.take(3))
+            </div>
+
+            <h3>Using Broadcast for Large Constants</h3>
+            <div class="code-block">
+# For large constants/configs, prefer a broadcast:
+b_thresh = sc.broadcast(80.0)
+high_b = rdd.filter(lambda line: monthly_charge_gt(line, threshold=b_thresh.value))
+print(high_b.take(3))
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>Closure Edge Case:</h4>
+                <p>Closures capture by reference. If you reassign <code>thresh</code> before the job runs, the filter will use the new value.</p>
+            </div>
+        </section>
+
+        <section id="function-patterns" class="content-section">
+            <h2>Function Patterns for Filter</h2>
+            
+            <h3>Four Common Ways to Give Filter a Predicate</h3>
+            
+            <div class="code-block">
+# All of these are okay:
+
+# A. Pass a named function that already matches the expected signature f(x)->bool
+rdd.filter(is_good_row)
+
+# B. Pass a lambda that implements the rule inline
+rdd.filter(lambda x: some_condition_on_x)
+
+# C. Pass a lambda that CALLS another function with extra parameters
+rdd.filter(lambda x: my_rule(x, extra=123))
+            </div>
+
+            <h3>Four Patterns with Example Function</h3>
+            <div class="code-block">
+def monthly_charge_gt(line, threshold=50.0):
+    # Very basic guard: return False on bad lines
+    if not line or not line.strip():
+        return False
+    parts = line.split(",")
+    if len(parts) <= 8:
+        return False
+    try:
+        charge = float(parts[8].strip())
+    except Exception:
+        return False
+    return charge > threshold
+
+# A) Pass the named function directly (no extra args)
+high_default = rdd.filter(monthly_charge_gt)      # uses threshold=50.0
+
+# B) Wrap it in a lambda to supply extra arguments
+high_80 = rdd.filter(lambda line: monthly_charge_gt(line, threshold=80.0))
+
+# C) Use a broadcast var (good if the "extra" is large or shared config)
+b_thresh = sc.broadcast(80.0)
+high_b = rdd.filter(lambda line: monthly_charge_gt(line, threshold=b_thresh.value))
+
+# D) Use functools.partial (clean way to "pre-fill" args)
+from functools import partial
+pred_gt80 = partial(monthly_charge_gt, threshold=80.0)
+high_p = rdd.filter(pred_gt80)
+            </div>
+
+            <div class="highlight-box error">
+                <h4>Very Important: "Passing a Function" vs "Calling a Function Now"</h4>
+                <ul>
+                    <li>✅ Pass the function (no parentheses): <code>rdd.filter(monthly_charge_gt)</code></li>
+                    <li>❌ Don't call it immediately: <code>rdd.filter(monthly_charge_gt())</code></li>
+                    <li>In lambdas, the call belongs inside the lambda: <code>rdd.filter(lambda line: monthly_charge_gt(line, 80.0))</code> ✅</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="performance-tips" class="content-section">
+            <h2>Performance & Safety Tips</h2>
+            
+            <div class="highlight-box success">
+                <h4>Best Practices:</h4>
+                <ul>
+                    <li>Prefer named functions when you need try/except or multiple checks</li>
+                    <li>Avoid heavy work inside the lambda (I/O, complex regex) — it runs for every row</li>
+                    <li>Preview with <code>take(n)</code>; don't <code>collect()</code> big results</li>
+                    <li>Output path must not exist if you later <code>saveAsTextFile(...)</code></li>
+                </ul>
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>Common Pitfalls:</h4>
+                <ul>
+                    <li>Exceptions inside your predicate crash the Spark task</li>
+                    <li>Printing from workers is unreliable for debugging</li>
+                    <li>Don't capture huge objects in closures</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="closure-gotchas" class="content-section">
+            <h2>Closures & the "Late-Binding" Gotcha</h2>
+            
+            <div class="highlight-box error">
+                <h4>Classic Beginner Trap!</h4>
+                <div class="code-block">
+threshold = 80.0
+pred = lambda line: monthly_charge_gt(line, threshold=threshold)
+# If you later do threshold = 100.0 before the job runs,
+# the lambda will use the NEW value (100.0), not 80.0.
+                </div>
+            </div>
+
+            <h3>Safe Fixes:</h3>
+            <h4>1. Default-Arg Trick (Freezes the Value at Definition Time):</h4>
+            <div class="code-block">
+pred = lambda line, t=threshold: monthly_charge_gt(line, threshold=t)
+            </div>
+
+            <h4>2. This Also Matters in Loops:</h4>
+            <div class="code-block">
+# WRONG
+preds = []
+for t in [50, 70, 90]:
+    preds.append(lambda line: monthly_charge_gt(line, threshold=t))     # ❌ all use 90 later
+
+# RIGHT
+preds = []
+for t in [50, 70, 90]:
+    preds.append(lambda line, tt=t: monthly_charge_gt(line, threshold=tt))  # ✅ 50, 70, 90 captured
+            </div>
+        </section>
+
+        <section id="comprehensive-examples" class="content-section">
+            <h2>Comprehensive Telecom Dataset Examples</h2>
+            
+            <h3>Setup (Run Once)</h3>
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+print("Lines (raw):", rdd.count())
+
+# Safe base: drop empty/whitespace lines
+non_empty = rdd.filter(lambda l: l is not None and l.strip())
+print("Non-empty lines:", non_empty.count())
+
+# Header handling
+header = non_empty.first()
+core = non_empty.filter(lambda l: l != header)
+print("Core (no header) preview:", core.take(3))
+            </div>
+
+            <p><strong>Columns (0-based):</strong><br>
+            0:CustomerID, 1:Mobile Number, 2:Gender, 3:SeniorCitizen, 4:Mode, 5:Calls, 6:SMS, 7:InternetStatus, 8:MonthlyCharges, 9:Churn</p>
+
+            <h3>1) Filter Churned Customers (col 9 == "Y")</h3>
+            <p>Goal: keep only churned rows. Handle case/space.</p>
+            <div class="code-block">
+churned = core.filter(lambda l: len(l.split(",")) > 9 and l.split(",")[9].strip().upper() == "Y")
+print("Churned count:", churned.count())
+print(churned.take(3))
+            </div>
+
+            <h3>2) Filter Senior Citizens (col 3 == "Y")</h3>
+            <div class="code-block">
+seniors = core.filter(lambda l: len(l.split(",")) > 3 and l.split(",")[3].strip().upper() == "Y")
+print("Seniors count:", seniors.count())
+print(seniors.take(3))
+            </div>
+
+            <h3>3) Senior and Churned (AND Condition)</h3>
+            <div class="code-block">
+senior_churn = core.filter(
+    lambda l: (lambda c: len(c) > 9 and c[3].strip().upper() == "Y" and c[9].strip().upper() == "Y")(l.split(","))
+)
+print("Senior+Churn count:", senior_churn.count())
+print(senior_churn.take(3))
+            </div>
+
+            <h3>4) Internet Active Status (col 7), Accept Synonyms</h3>
+            <p>Treat "ACTIVE", "ENABLED", "ON" as active (case-insensitive).</p>
+            <div class="code-block">
+ACTIVE = {"ACTIVE", "ENABLED", "ON"}
+active = core.filter(lambda l: (lambda c: len(c) > 7 and c[7].strip().upper() in ACTIVE)(l.split(",")))
+print("Active internet count:", active.count())
+print(active.take(3))
+            </div>
+
+            <h3>5) MonthlyCharges > Threshold (Guard Bad Data)</h3>
+            <p>Use a named function (easier to handle errors) and call it from a lambda.</p>
+            <div class="code-block">
+def charge_gt(line, threshold=50.0):
+    p = line.split(",")
+    if len(p) <= 8: return False
+    try:
+        return float(p[8].strip()) > threshold
+    except Exception:
+        return False
+
+high50 = core.filter(charge_gt)  # uses default > 50
+print("charge > 50 count:", high50.count())
+
+high80 = core.filter(lambda l: charge_gt(l, threshold=80.0))
+print("charge > 80 count:", high80.count())
+print(high80.take(3))
+            </div>
+
+            <h3>6) Calls is an Integer and ≥ K (Type-Safe)</h3>
+            <div class="code-block">
+def calls_ge(line, k=50):
+    p = line.split(",")
+    if len(p) <= 5: return False
+    try:
+        return int(p[5].strip()) >= k
+    except Exception:
+        return False
+
+heavy_calls = core.filter(calls_ge)  # >= 50
+print("Calls >= 50 count:", heavy_calls.count())
+print(heavy_calls.take(3))
+            </div>
+
+            <h3>7) Combine 3 Conditions with Lambda Only</h3>
+            <p>Postpaid (col 4 == "POSTPAID"), churned, and calls ≥ 30.</p>
+            <div class="code-block">
+postpaid_churn_calls30 = core.filter(
+    lambda l: (lambda p:
+        len(p) > 9
+        and p[4].strip().upper() == "POSTPAID"
+        and p[9].strip().upper() == "Y"
+        and (p[5].strip().isdigit() and int(p[5].strip()) >= 30)
+    )(l.split(","))
+)
+print("Postpaid+Churn+Calls>=30:", postpaid_churn_calls30.count())
+print(postpaid_churn_calls30.take(3))
+            </div>
+
+            <h3>8) Gender-Wise Filter (M/F), Case-Insensitive</h3>
+            <div class="code-block">
+males = core.filter(lambda l: (lambda p: len(p) > 2 and p[2].strip().upper() == "M")(l.split(",")))
+females = core.filter(lambda l: (lambda p: len(p) > 2 and p[2].strip().upper() == "F")(l.split(",")))
+print("Male rows:", males.count(), "Female rows:", females.count())
+print("Male preview:", males.take(2))
+print("Female preview:", females.take(2))
+            </div>
+
+            <h3>9) Detect Malformed Rows Using Only Filter</h3>
+            <p>Count rows that are invalid because they have < 10 columns or non-numeric MonthlyCharges.</p>
+            <div class="code-block">
+valid_len = core.filter(lambda l: len(l.split(",")) >= 10)
+invalid_len = core.filter(lambda l: len(l.split(",")) < 10)
+
+def is_numeric_charge(line):
+    p = line.split(",")
+    if len(p) < 9: return False
+    try:
+        float(p[8].strip()); return True
+    except Exception:
+        return False
+
+valid_charge = core.filter(is_numeric_charge)
+invalid_charge = core.filter(lambda l: not is_numeric_charge(l))
+
+print("Valid len:", valid_len.count(), "Invalid len:", invalid_len.count())
+print("Valid charge:", valid_charge.count(), "Invalid charge:", invalid_charge.count())
+            </div>
+
+            <h3>10) Late-Binding Closure Trap (and the Fix)</h3>
+            <p>Make three filters for charges > 50, 70, 90 — ensure each captures its own threshold.</p>
+            <div class="code-block">
+# WRONG (all use 90 later)
+bad_preds = []
+for t in [50.0, 70.0, 90.0]:
+    bad_preds.append(lambda l: charge_gt(l, threshold=t))
+print([core.filter(p).count() for p in bad_preds])  # likely all same → wrong
+
+# RIGHT: freeze t via default arg
+good_preds = []
+for t in [50.0, 70.0, 90.0]:
+    good_preds.append(lambda l, tt=t: charge_gt(l, threshold=tt))
+print([core.filter(p).count() for p in good_preds])  # should be non-increasing
+            </div>
+        </section>
+
+        <section id="best-practices" class="content-section">
+            <h2>Best Practices & Common Pitfalls</h2>
+            
+            <h3>Named Function (Most Readable, Beginner-Friendly)</h3>
+            <div class="code-block">
+def is_senior_and_churn(d):
+    parts = d.split(",")
+    if len(parts) <= 9:
+        return False
+    return parts[9].strip().upper() == "Y" and parts[3].strip().upper() == "Y"
+
+newdata = rdd.filter(is_senior_and_churn)
+            </div>
+
+            <div class="highlight-box success">
+                <h4>Why This Pattern is Good:</h4>
+                <ul>
+                    <li>Same logic, super clear, easy to test</li>
+                    <li>No repeated split</li>
+                    <li>Handles edge cases safely</li>
+                </ul>
+            </div>
+
+            <h3>Common Issues to Watch For:</h3>
+            <div class="highlight-box error">
+                <ul>
+                    <li><strong>IndexError if a row has < 10 fields</strong> → fix with <code>len(parts) > 9</code></li>
+                    <li><strong>Spaces/case like " y "</strong> → use <code>.strip().upper()</code></li>
+                    <li><strong>Header row can slip through sometimes</strong> → remove it explicitly</li>
+                    <li><strong>Embedded commas in CSV</strong> (e.g., "Doe, John") will break any <code>split(",")</code> solution. (When we're done with filter, use robust parse with map or Python's csv reader. For now we're focusing on filter.)</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="practice-exercises" class="content-section">
+            <h2>Practice Exercises</h2>
+            
+            <h3>Exercise 1: Basic Filtering</h3>
+            <p>Drop empties + header, then count how many rows remain.</p>
+            <div class="code-block">
+header = rdd.first()
+core = rdd.filter(lambda l: l and l.strip() and l != header)
+print(core.count())
+            </div>
+
+            <h3>Exercise 2: Internet Service Filtering</h3>
+            <p>Build a filter that keeps rows where Internet Service Status (col 7) is case-insensitively "ACTIVE" or "ENABLED":</p>
+            <div class="code-block">
+def is_active(line):
+    p = line.split(",")
+    return len(p) > 7 and p[7].strip().upper() in ("ACTIVE", "ENABLED")
+
+active = core.filter(is_active)
+print(active.take(5))
+print("Active count:", active.count())
+            </div>
+
+            <h3>Exercise 3: Complex Conditions</h3>
+            <p>Combine: senior & active, but NOT churned (i.e., churn flag != "Y"):</p>
+            <div class="code-block">
+def senior_active_not_churn(line):
+    p = line.split(",")
+    if len(p) < 10: 
+        return False
+    return (p[3].strip().upper() == "Y" and 
+            p[7].strip().upper() in ("ACTIVE","ENABLED") and 
+            p[9].strip().upper() != "Y")
+
+res = core.filter(senior_active_not_churn)
+print(res.take(5))
+print("Count:", res.count())
+            </div>
+
+            <h3>Exercise 4: Type-Safe Numeric Filtering</h3>
+            <p>Keep only rows where Calls (col 5) is a valid integer and is ≥ 50:</p>
+            <div class="code-block">
+def calls_ge(line, k=50):
+    p = line.split(",")
+    if len(p) < 6: 
+        return False
+    try:
+        return int(p[5].strip()) >= k
+    except Exception:
+        return False
+
+heavy_callers = core.filter(calls_ge)
+print(heavy_callers.take(5))
+print("Count:", heavy_callers.count())
+            </div>
+
+            <h3>Exercise 5: Closure Trap Demonstration</h3>
+            <p>Make three filters for charges > 50, 70, 90 — ensure each captures its own threshold:</p>
+            <div class="code-block">
+# WRONG (all use 90 later)
+bad_preds = []
+for t in [50.0, 70.0, 90.0]:
+    bad_preds.append(lambda l: charge_gt(l, threshold=t))
+print([core.filter(p).count() for p in bad_preds])  # likely all same → wrong
+
+# RIGHT: freeze t via default arg
+good_preds = []
+for t in [50.0, 70.0, 90.0]:
+    good_preds.append(lambda l, tt=t: charge_gt(l, threshold=tt))
+print([core.filter(p).count() for p in good_preds])  # should be non-increasing
+            </div>
+        </section>
+
+        <div class="topic-navigation">
+            <div>
+                <a href="basic.html" class="nav-link">
+                    ← Previous: PySpark Basics
+                </a>
+            </div>
+            <div>
+                <a href="map.html" class="nav-link">
+                    Next: Map Operations →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Join Operations - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#join-types">Join Types</a>
+                <a href="#examples">Examples</a>
+                <a href="#optimization">Optimization</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>Join Operations</h1>
+            <p>Master inner, outer, left, and right joins with RDDs and optimization techniques</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="groupbykey.html">GroupByKey</a> / Join Operations
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-joins-do">What Joins Do</a></li>
+                <li><a href="#toy-examples">Toy Examples</a></li>
+                <li><a href="#telecom-setup">Telecom Dataset Setup</a></li>
+                <li><a href="#pair-rdds">Building Pair RDDs to Join</a></li>
+                <li><a href="#broadcast-joins">Broadcast (Map-Side) Joins</a></li>
+                <li><a href="#partitioning">Partitioning for Faster Joins</a></li>
+                <li><a href="#edge-cases">Edge Cases & Gotchas</a></li>
+                <li><a href="#repair-patterns">Repair Patterns</a></li>
+                <li><a href="#deduplication">Deduplication Strategies</a></li>
+                <li><a href="#practice">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="what-joins-do" class="content-section">
+            <h2>Joins in RDD Land (What & When)</h2>
+            
+            <div class="highlight-box">
+                <h4>Input Shape:</h4>
+                <p>Pair RDDs — elements must be <code>(key, value)</code>.</p>
+            </div>
+
+            <h3>APIs:</h3>
+            <ul>
+                <li><code>rdd1.join(rdd2)</code> → inner join</li>
+                <li><code>leftOuterJoin, rightOuterJoin, fullOuterJoin</code></li>
+            </ul>
+
+            <p><strong>Output:</strong> <code>(key, (value_from_rdd1, value_from_rdd2))</code> (with None when missing in outer joins).</p>
+
+            <div class="highlight-box warning">
+                <h4>Big Idea:</h4>
+                <p>Joins are wide shuffles. For small lookups, broadcast is often faster than an RDD join.</p>
+            </div>
+        </section>
+
+        <section id="toy-examples" class="content-section">
+            <h2>1) Toy Examples (Feel the Behavior First)</h2>
+            
+            <div class="code-block">
+a = sc.parallelize([("x",1), ("y",2), ("x",3)])   # note duplicate key "x"
+b = sc.parallelize([("x","A"), ("z","Z")])
+
+# 1) Inner join: keys present in both (only "x")
+print(a.join(b).collect())
+# [('x', (1, 'A')), ('x', (3, 'A'))]  ← 2×1 = 2 rows (multiplication!)
+
+# 2) Left outer: keep all keys from a
+print(a.leftOuterJoin(b).collect())
+# [('x',(1,'A')), ('x',(3,'A')), ('y',(2,None))]
+
+# 3) Right outer: keep all keys from b
+print(a.rightOuterJoin(b).collect())
+# [('x',(1,'A')), ('x',(3,'A')), ('z',(None,'Z'))]
+
+# 4) Full outer: union of keys
+print(a.fullOuterJoin(b).collect())
+# [('x', (1,'A')), ('x',(3,'A')), ('y',(2,None)), ('z',(None,'Z'))]
+            </div>
+
+            <div class="highlight-box">
+                <h4>🧠 Key Multiplication:</h4>
+                <p>If a has k rows for key K and b has m rows for K, join produces k×m rows for K.</p>
+            </div>
+        </section>
+
+        <section id="telecom-setup" class="content-section">
+            <h2>2) Set Up Your Telecom RDD (One-Time)</h2>
+            
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: return []
+    def zint(s): 
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    row = (
+        p[0].strip(),       # 0 id
+        p[1].strip(),       # 1 mobile
+        norm(p[2]),         # 2 gender
+        norm(p[3])=="Y",    # 3 senior (bool)
+        norm(p[4]),         # 4 mode
+        zint(p[5]),         # 5 calls
+        zint(p[6]),         # 6 sms
+        norm(p[7]),         # 7 net
+        zfloat(p[8]),       # 8 charges
+        norm(p[9])=="Y"     # 9 churn (bool)
+    )
+    return [row]
+
+clean = base.flatMap(parse_or_skip)
+print("clean preview:", clean.take(3))
+# row: (id, mobile, gender, senior, mode, calls, sms, net, charges, churn)
+            </div>
+        </section>
+
+        <section id="pair-rdds" class="content-section">
+            <h2>3) Build Pair RDDs to Join</h2>
+            
+            <h3>3.1 Join Customer Flags with Charges</h3>
+            <div class="code-block">
+id_flags   = clean.map(lambda r: (r[0], (r[2], r[3], r[4], r[7], r[9])))
+# (id, (gender, senior, mode, net, churn))
+
+id_charge  = clean.flatMap(lambda r: [] if r[8] is None else [(r[0], r[8])])
+# (id, charges)
+
+joined = id_flags.join(id_charge)   # inner join on id
+print(joined.take(5))
+# (id, ( (gender, senior, mode, net, churn), charges ))
+            </div>
+
+            <h3>3.2 Left Outer: Keep All Customers, Even If Charges Missing</h3>
+            <div class="code-block">
+left = id_flags.leftOuterJoin(id_charge)
+print(left.take(5))
+# charges may be None when missing
+            </div>
+
+            <h3>3.3 Join by Non-ID Key (e.g., by MODE)</h3>
+            <div class="code-block">
+# counts per mode (as a "fact" RDD)
+mode_one = clean.map(lambda r: (r[4], 1)).reduceByKey(lambda a,b: a+b)  # (mode, count)
+
+# tiny "dimension" RDD of mode labels (simulate lookup)
+mode_info = sc.parallelize([("PREPAID","PAYG"), ("POSTPAID","BILLING")])  # (mode, label)
+
+mode_join = mode_one.leftOuterJoin(mode_info)
+print(mode_join.collect())
+# (mode, (count, label_or_None))
+            </div>
+
+            <h3>3.4 Composite Keys (Multi-Column Join)</h3>
+            <div class="code-block">
+# key on (mode, gender)
+mg_to_id  = clean.map(lambda r: ((r[4], r[2]), r[0]))      # ((mode,gender), id)
+mg_counts = clean.map(lambda r: ((r[4], r[2]), 1)).reduceByKey(lambda a,b: a+b)
+mg_join   = mg_to_id.join(mg_counts)
+print(mg_join.take(5))
+# ((mode,gender), (id, total_in_that_bucket))
+            </div>
+        </section>
+
+        <section id="broadcast-joins" class="content-section">
+            <h2>4) Broadcast (Map-Side) Join — Fastest for Small Lookups</h2>
+            
+            <p>If one side is small (a few MB), skip the shuffle:</p>
+
+            <div class="code-block">
+# Example: mode → friendly label (small)
+mode_map = {"PREPAID":"PAYG", "POSTPAID":"BILLING"}
+b_mode = sc.broadcast(mode_map)
+
+labeled = clean.map(lambda r: (r[0], b_mode.value.get(r[4], r[4])))
+print(labeled.take(5))
+            </div>
+
+            <p>This replaces an RDD join with an O(1) dictionary lookup on each row.</p>
+
+            <div class="highlight-box">
+                <h4>Small Side Rule of Thumb:</h4>
+                <p>≤ few million entries / few hundred MB is OK to broadcast.</p>
+            </div>
+        </section>
+
+        <section id="partitioning" class="content-section">
+            <h2>5) Partitioning for Faster Joins (Advanced but Exam-Friendly)</h2>
+            
+            <p>If both pair RDDs share the same partitioner, the join avoids an extra shuffle.</p>
+
+            <div class="code-block">
+# Make both RDDs keyed by id and partition them the same way
+id_flags_p  = id_flags.partitionBy(64)    # same number for both
+id_charge_p = id_charge.partitionBy(64)
+
+fast_join = id_flags_p.join(id_charge_p)
+            </div>
+
+            <p>Also, <code>reduceByKey</code>/<code>join</code> preserve the partitioner, so chaining joins on the same key benefits from earlier partitioning.</p>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>6) Edge Cases & Gotchas (Don't Lose Marks)</h2>
+            
+            <div class="highlight-box error">
+                <h4>Common Issues:</h4>
+                <ul>
+                    <li><strong>Not pairs?</strong> Joins require (key,value). If you see "not enough values to unpack", fix your pair-building step.</li>
+                    <li><strong>Duplicate keys ⇒ row explosion.</strong> If id_flags has 2 entries for an id and id_charge has 3 entries, inner join outputs 6 rows for that id.</li>
+                    <li><strong>Missing keys in outer joins come as None.</strong> Always guard when you access them.</li>
+                    <li><strong>Key normalization:</strong> ensure same type/case/whitespace on both sides (upper(), strip, cast to int). Mismatched key formats produce unintended "no match".</li>
+                </ul>
+            </div>
+
+            <h3>Fix by Deduplicating First:</h3>
+            <p><code>reduceByKey(lambda a,b: a)</code> or <code>distinct()</code> on pairs, or pre-aggregating.</p>
+
+            <h3>Example: Safe None Handling</h3>
+            <div class="code-block">
+left.map(lambda kv: (kv[0], kv[1][0], kv[1][1] if kv[1][1] is not None else 0.0))
+            </div>
+
+            <h3>Performance Issues:</h3>
+            <ul>
+                <li><strong>Skew / hot keys:</strong> One key with most rows ⇒ a single reducer becomes a straggler or OOM.</li>
+                <li><strong>Mitigate:</strong> with more partitions, salting (advanced), or move to DataFrames with AQE.</li>
+                <li><strong>Cartesian is not a join.</strong> <code>rdd.cartesian(other)</code> is a full cross product — huge; avoid unless you truly need it.</li>
+                <li><strong>Memory in actions:</strong> After a join, don't <code>collect()</code> everything if the result can be large. Use <code>take(n)</code> or write out with <code>saveAsTextFile</code>.</li>
+            </ul>
+        </section>
+
+        <section id="repair-patterns" class="content-section">
+            <h2>7) Small "Repair" Patterns You'll Need</h2>
+            
+            <h3>7.1 Deduplicate Before Joining</h3>
+            <div class="code-block">
+# Keep first value seen per id in each side (example)
+id_flags_uniq  = id_flags.reduceByKey(lambda a,_: a)
+id_charge_uniq = id_charge.reduceByKey(lambda a,_: a)
+dedup_join = id_flags_uniq.join(id_charge_uniq)
+            </div>
+
+            <h3>7.2 Default Value After Outer Join</h3>
+            <div class="code-block">
+left = id_flags.leftOuterJoin(id_charge)
+filled = left.map(lambda kv: (kv[0], kv[1][0], kv[1][1] if kv[1][1] is not None else 0.0))
+print(filled.take(5))
+            </div>
+
+            <h3>7.3 Post-Join Filtering (e.g., Senior Churned with Charge > 70)</h3>
+            <div class="code-block">
+senior_churn_charge = (id_flags.join(id_charge)
+    .filter(lambda kv: kv[1][0][1] and kv[1][0][4] and kv[1][1] > 70.0))
+print(senior_churn_charge.take(5))
+# kv[1][0] = (gender, senior, mode, net, churn), kv[1][1] = charges
+            </div>
+        </section>
+
+        <section id="deduplication" class="content-section">
+            <h2>Deduplication Strategies - How Each Method Works</h2>
+            
+            <div class="highlight-box">
+                <h4>Great Question from the Original Content:</h4>
+                <p>"Fix by deduplicating first: reduceByKey(lambda a,b: a) or distinct() on pairs, or pre-aggregating. How does this deduplicate the record?"</p>
+            </div>
+
+            <h3>1) distinct() — Removes Exact Duplicate Pairs</h3>
+            <p>Use when you literally have repeated identical (key, value) rows and you want to drop exact repeats.</p>
+            <div class="code-block">
+pairs = sc.parallelize([
+  ("C1", ("M", True)), 
+  ("C1", ("M", True)),   # exact duplicate of previous
+  ("C2", ("F", False))
+])
+
+dedup = pairs.distinct()
+print(dedup.collect())
+# → [("C1", ("M", True)), ("C2", ("F", False))]
+            </div>
+
+            <div class="highlight-box warning">
+                <p>⚠️ If the values differ for the same key (e.g., two different records for C1), <code>distinct()</code> will keep both, because they're not equal.</p>
+                <div class="code-block">
+sc.parallelize([("C1", ("M", True)), ("C1", ("F", False))]).distinct().collect()
+# both remain
+                </div>
+                <p>Cost: full shuffle.</p>
+            </div>
+
+            <h3>2) reduceByKey(lambda a, b: a) — Keeps One Value Per Key ("Pick Any")</h3>
+            <p>Use when you want at most one row per key, and you don't care which value survives.</p>
+            <div class="code-block">
+pairs = sc.parallelize([
+  ("C1", ("M", True)),
+  ("C1", ("F", False)),   # conflicting values for the same key
+  ("C2", ("F", False))
+])
+
+keep_any = pairs.reduceByKey(lambda a, b: a)
+print(keep_any.collect())
+# → [('C1', ('M', True)), ('C2', ('F', False))]   # or could keep ('F', False) for C1
+            </div>
+
+            <div class="highlight-box error">
+                <h4>⚠️ Non-deterministic:</h4>
+                <p>Which value you get for a key. <code>lambda a,b:a</code> is not commutative, and Spark combines in an arbitrary tree → the kept value can vary by partitioning/run.</p>
+                <p>✅ OK if any value is fine (e.g., you only need a unique key list or you know values are effectively equivalent).</p>
+                <p>❗ If you need a specific record to survive (latest, max charge, etc.), don't use a or b blindly — pick with a deterministic rule (see next).</p>
+            </div>
+
+            <h3>3) reduceByKey with a Deterministic Rule (Recommended)</h3>
+            <p>Choose the survivor by a rule (max/min by a field, newest timestamp, etc.). This is commutative + associative, so it's stable.</p>
+
+            <h4>a) Keep the Max Charge Per ID</h4>
+            <div class="code-block">
+id_charge = clean.flatMap(lambda r: [] if r[8] is None else [(r[0], r[8])])
+max_charge_per_id = id_charge.reduceByKey(lambda x, y: x if x > y else y)
+            </div>
+
+            <h4>b) Keep the Record with the Highest Charge Per ID</h4>
+            <p>(value is a tuple; compare by the field you care about)</p>
+            <div class="code-block">
+# (id, (gender, senior, mode, net, churn, charges))
+id_record = clean.flatMap(
+    lambda r: [] if r[8] is None else [(r[0], (r[2], r[3], r[4], r[7], r[9], r[8]))]
+)
+best_per_id = id_record.reduceByKey(lambda a, b: a if a[5] >= b[5] else b)
+            </div>
+
+            <h4>c) Keep the Lexicographically Smallest Value (If Values are Comparable)</h4>
+            <div class="code-block">
+dedup_min = pairs.reduceByKey(lambda a, b: a if a < b else b)
+            </div>
+
+            <div class="highlight-box">
+                <h4>Pick a Rule:</h4>
+                <p>That's associative/commutative (min/max by a well-defined key) — then it's safe and reproducible.</p>
+            </div>
+
+            <h3>4) Pre-Aggregating Instead of Deduping</h3>
+            <p>Sometimes you don't want "one surviving row", you want to combine duplicates meaningfully.</p>
+
+            <h4>a) Sum Charges Per ID (Collapse Multiple Months)</h4>
+            <div class="code-block">
+sum_charge_per_id = id_charge.reduceByKey(lambda x, y: x + y)
+            </div>
+
+            <h4>b) Build a Set of Modes Seen Per ID (Dedupe Within the Set)</h4>
+            <div class="code-block">
+id_mode = clean.map(lambda r: (r[0], r[4]))
+# turn each value into a tiny set, then union
+modes_per_id = id_mode.mapValues(lambda m: {m}) \
+                      .reduceByKey(lambda a, b: a.union(b))
+            </div>
+            <p>(If sets could grow huge, prefer aggregateByKey with bounded buffers.)</p>
+
+            <h3>5) Which One Should You Use Before a Join?</h3>
+            <div class="highlight-box">
+                <ul>
+                    <li>If your RDDs have exact duplicate pairs, <code>distinct()</code> is fine (drops perfect duplicates only).</li>
+                    <li>If the problem is multiple rows per key (with possibly different values), and you just need one per key to avoid join multiplication:
+                        <ul>
+                            <li>Use <code>reduceByKey</code> with a deterministic rule (e.g., max/min/"latest by timestamp").</li>
+                            <li>Only use <code>lambda a,b:a</code> when "any value is fine" and you accept nondeterminism.</li>
+                        </ul>
+                    </li>
+                    <li>If you actually want aggregated info (sum, count, set), pre-aggregate with <code>reduceByKey</code>/<code>aggregateByKey</code>.</li>
+                </ul>
+            </div>
+
+            <h3>6) Concrete "Before Join" Examples on Your Telecom Data</h3>
+            <div class="code-block">
+# Example 1 — ensure at most one flag row per id (pick any; nondeterministic)
+id_flags = clean.map(lambda r: (r[0], (r[2], r[3], r[4], r[7], r[9])))
+id_flags_one = id_flags.reduceByKey(lambda a, b: a)   # "any one" per id
+
+# Example 2 — ensure one charge per id (pick max charge; deterministic)
+id_charge = clean.flatMap(lambda r: [] if r[8] is None else [(r[0], r[8])])
+id_charge_max = id_charge.reduceByKey(lambda x, y: x if x > y else y)
+
+# Example 3 — now the join won't explode
+joined = id_flags_one.join(id_charge_max)
+print(joined.take(10))
+            </div>
+
+            <p>If you had left both sides with multiple records per id, inner join would make k×m rows per id.</p>
+
+            <h3>7) Common Pitfalls (So You Don't Lose Marks)</h3>
+            <div class="highlight-box error">
+                <ul>
+                    <li><code>distinct()</code> does not dedupe by key — it only removes identical pairs.</li>
+                    <li><code>reduceByKey(lambda a,b:a)</code> is not commutative → nondeterministic pick. Use only when "any" is acceptable. Prefer min/max by an explicit criterion.</li>
+                    <li>Clean the keys first (trim, upper(), cast types), or you'll miss matches and think dedup failed.</li>
+                    <li>After dedup/aggregation, cache if reusing, to avoid recomputation.</li>
+                    <li>If you just need unique keys (no values), do <code>pairs.keys().distinct()</code> — but you'll then lose values. To keep one value per key, use <code>reduceByKey</code> with a rule.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="practice" class="content-section">
+            <h2>8) Practice (Do These One by One)</h2>
+            
+            <h3>Q1. Inner Join on ID: Flags × Charges</h3>
+            <ul>
+                <li>Build <code>id_flags</code> and <code>id_charge</code> as above.</li>
+                <li>Join them and keep <code>(id, (mode, charges))</code>.</li>
+                <li>Preview with <code>.take(10)</code>.</li>
+            </ul>
+
+            <h3>Q2. Left Outer Join: Keep All Customers</h3>
+            <ul>
+                <li>Left-join <code>id_flags</code> with <code>id_charge</code>.</li>
+                <li>Replace missing charges with 0.0.</li>
+                <li>Count how many had missing charges.</li>
+            </ul>
+
+            <h3>Q3. Duplicate Explosion Demo (and Fix)</h3>
+            <ul>
+                <li>Create <code>dup_flags = id_flags.union(id_flags.filter(lambda kv: kv[0] % 2 == 0))</code> so some ids repeat.</li>
+                <li>Join <code>dup_flags</code> with <code>id_charge</code> and note the increased row count.</li>
+                <li>Fix by deduplicating before the join.</li>
+            </ul>
+
+            <h3>Q4. Join by Composite Key</h3>
+            <ul>
+                <li>Key on <code>(mode, gender)</code> to join IDs with counts, as in §3.4.</li>
+                <li>From the joined RDD, produce <code>(mode, gender, id, total_in_bucket)</code>.</li>
+            </ul>
+
+            <h3>Q5. Broadcast Join</h3>
+            <ul>
+                <li>Build a tiny dict <code>{mode: label}</code> (or <code>{net_status: normalized}</code>) and decorate each row without an RDD join.</li>
+            </ul>
+
+            <p>If you paste your result for Q1 or Q2, I'll walk through it line by line and help debug anything odd (e.g., None, explosions, or mismatched keys).</p>
+        </section>
+        
+        <div class="topic-navigation">
+            <div>
+                <a href="groupbykey.html" class="nav-link">
+                    ← Previous: GroupByKey
+                </a>
+            </div>
+            <div>
+                <a href="sortbykey.html" class="nav-link">
+                    Next: SortByKey →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark ReduceByKey - Key-Value Aggregation Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#what-reducebykey-does">ReduceByKey Basics</a>
+                <a href="#examples">Examples</a>
+                <a href="#practice">Practice</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>ReduceByKey Operations</h1>
+            <p>Perform key-wise aggregations efficiently with reduceByKey operations</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="reduce.html">Reduce Operations</a> / ReduceByKey
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-reducebykey-does">What ReduceByKey Does</a></li>
+                <li><a href="#basic-examples">Basic Examples</a></li>
+                <li><a href="#vs-groupbykey">ReduceByKey vs GroupByKey</a></li>
+                <li><a href="#telecom-examples">Real Dataset Examples</a></li>
+                <li><a href="#averages">Computing Averages</a></li>
+                <li><a href="#performance">Performance & Partitions</a></li>
+                <li><a href="#edge-cases">Edge Cases & Gotchas</a></li>
+                <li><a href="#practice">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="what-reducebykey-does" class="content-section">
+            <h2>What ReduceByKey Does</h2>
+            
+            <p><code>reduceByKey(func)</code> works on pair RDDs and performs aggregation by key, doing map-side combining first (faster and lighter than groupByKey).</p>
+
+            <div class="highlight-box">
+                <h4>Key Properties:</h4>
+                <ul>
+                    <li>Must take two values and return one value of the same type</li>
+                    <li>Should be associative and commutative (e.g., +, min, max)</li>
+                    <li>Performs map-side combining before shuffling (more efficient)</li>
+                </ul>
+            </div>
+
+            <h3>Basic Examples</h3>
+            <div class="code-block">
+pairs = sc.parallelize([("a", 1), ("b", 5), ("a", 2), ("b", 7), ("c", 3)])
+res = pairs.reduceByKey(lambda a, b: a + b)
+print(res.collect())  # [('a', 3), ('b', 12), ('c', 3)]
+
+# Max by key
+pairs = sc.parallelize([("x", 10), ("x", 7), ("x", 12), ("y", 2)])
+res = pairs.reduceByKey(lambda a, b: a if a > b else b)
+print(res.collect())  # [('x', 12), ('y', 2)]
+
+# Count by key (values are all 1)
+pairs = sc.parallelize([("a",1),("b",1),("a",1),("c",1),("b",1)])
+cnt = pairs.reduceByKey(lambda a, b: a + b)
+print(cnt.collect())  # [('a',2), ('b',2), ('c',1)]
+            </div>
+        </section>
+
+        <section id="vs-groupbykey" class="content-section">
+            <h2>ReduceByKey vs GroupByKey</h2>
+            
+            <div class="highlight-box warning">
+                <h4>Performance Difference:</h4>
+                <ul>
+                    <li><strong>groupByKey:</strong> sends all values across network, then aggregate. Heavy.</li>
+                    <li><strong>reduceByKey:</strong> aggregates partially on each mapper first. Much lighter.</li>
+                </ul>
+            </div>
+
+            <p><strong>Use reduceByKey</strong> for sums, counts, min/max, logical OR/AND, etc.</p>
+            <p><strong>Use groupByKey</strong> only when you truly need all individual values together.</p>
+
+            <p>Same idea as GroupBy+Sum, but reduceByKey is more efficient because it combines within each partition first (fewer shuffled bytes).</p>
+        </section>
+
+        <section id="telecom-examples" class="content-section">
+            <h2>Real Dataset Setup & Examples</h2>
+            
+            <p>Run this once in your Docker PySpark:</p>
+
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+
+# drop empties + header
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+# quick robust-ish parse via flatMap (skip malformed by returning [])
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: return []
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+
+    row = (
+        p[0].strip(),           # 0: customer_id
+        p[1].strip(),           # 1: mobile
+        norm(p[2]),             # 2: gender
+        norm(p[3]) == "Y",      # 3: senior (bool)
+        norm(p[4]),             # 4: mode (PREPAID/POSTPAID)
+        zint(p[5]),             # 5: calls
+        zint(p[6]),             # 6: sms
+        norm(p[7]),             # 7: internet status
+        zfloat(p[8]),           # 8: monthly charges
+        norm(p[9]) == "Y"       # 9: churn (bool)
+    )
+    return [row]
+
+clean = base.flatMap(parse_or_skip)
+print("clean preview:", clean.take(3))
+            </div>
+
+            <p>Row shape: <code>(id, mobile, gender, senior, mode, calls, sms, net, charges, churn)</code></p>
+
+            <h3>1. Churn Count by Gender</h3>
+            <div class="code-block">
+# (gender, 1 if churned else 0)  → sum
+kv = clean.map(lambda r: (r[2], 1 if r[9] else 0))
+churn_by_gender = kv.reduceByKey(lambda a, b: a + b)
+print(churn_by_gender.collect())
+            </div>
+
+            <h3>2. Total Monthly Revenue by Mode (Skip None Charges)</h3>
+            <div class="code-block">
+kv = clean.flatMap(lambda r: [] if r[8] is None else [(r[4], r[8])])  # (mode, charge)
+rev_by_mode = kv.reduceByKey(lambda a, b: a + b)
+print(rev_by_mode.collect())
+            </div>
+
+            <h3>3. Total CALLS by Mode (Skip None)</h3>
+            <div class="code-block">
+kv = clean.flatMap(lambda r: [] if r[5] is None else [(r[4], r[5])])
+calls_by_mode = kv.reduceByKey(lambda a, b: a + b)
+print(calls_by_mode.collect())
+            </div>
+        </section>
+
+        <section id="averages" class="content-section">
+            <h2>Averages with ReduceByKey (Classic Pattern)</h2>
+            
+            <p>Reduce needs same type in/out, so we first map value to a (sum, count) pair, then reduce pairwise, then compute sum/count → mean.</p>
+
+            <h3>1. Average Charges by Gender</h3>
+            <div class="code-block">
+# (gender, (sum, count))
+kv = clean.flatMap(lambda r: [] if r[8] is None else [(r[2], (r[8], 1))])
+sumcnt = kv.reduceByKey(lambda a, b: (a[0] + b[0], a[1] + b[1]))
+avg = sumcnt.mapValues(lambda sc: sc[0] / sc[1] if sc[1] else None)
+print(avg.collect())
+            </div>
+
+            <h3>2. Average Calls by Mode (Treat None as Skip)</h3>
+            <div class="code-block">
+kv = clean.flatMap(lambda r: [] if r[5] is None else [(r[4], (r[5], 1))])
+sumcnt = kv.reduceByKey(lambda a, b: (a[0] + b[0], a[1] + b[1]))
+avg_calls = sumcnt.mapValues(lambda sc: sc[0] / sc[1] if sc[1] else None)
+print(avg_calls.collect())
+            </div>
+
+            <div class="highlight-box">
+                <h4>Edge Case Handled:</h4>
+                <p>Keys with no valid numeric values never appear because we skip None rows in flatMap.</p>
+            </div>
+        </section>
+
+        <section id="performance" class="content-section">
+            <h2>Controlling Partitions (Performance Knob)</h2>
+            
+            <p>You can ask for more/fewer reduce tasks:</p>
+
+            <div class="code-block">
+# e.g., 64 reducers (tune per data volume)
+churn_by_gender_64 = kv.reduceByKey(lambda a, b: a + b, numPartitions=64)
+            </div>
+
+            <p>More partitions → more parallelism, less skew per reducer; too many → overhead.</p>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>Deep Edge Cases & Gotchas (Exam Gold)</h2>
+            
+            <div class="highlight-box error">
+                <h4>Must Be a Pair RDD</h4>
+                <p>If elements aren't 2-tuples, you'll get errors. Always build (key, value) first.</p>
+            </div>
+
+            <h3>Reducer Function Type</h3>
+            <p><code>f(a, b)</code> must accept two values and return the same type.</p>
+            <ul>
+                <li><strong>OK:</strong> numbers with +, tuples (sum, count), dict merging, sets union.</li>
+                <li><strong>Bad:</strong> returning a different type than input.</li>
+            </ul>
+
+            <h3>Associative & Commutative</h3>
+            <div class="highlight-box warning">
+                <h4>Order Warning:</h4>
+                <p>Order of operations is arbitrary across partitions. Don't use order-dependent ops (e.g., string concatenation that requires sequence, subtraction, appending to a list when order matters).</p>
+            </div>
+
+            <p>If you must keep order or top-N per key → look at aggregateByKey / combineByKey / takeOrdered.</p>
+
+            <h3>None / Bad Data</h3>
+            <p>Reduce won't fix bad types. Clean before reduce (skip Nones with flatMap or filter).</p>
+
+            <h3>NaN in Floats</h3>
+            <p>Sum involving <code>float('nan')</code> yields nan. Clean NaNs first if needed.</p>
+
+            <h3>Mutable Shared State</h3>
+            <div class="highlight-box error">
+                <h4>Don't Mutate External Objects:</h4>
+                <p>Don't mutate external Python objects inside the reducer. The function runs on workers; shared state won't sync back. Use accumulators only for specific patterns (and carefully). For key/value aggregation, just return the new value.</p>
+            </div>
+
+            <h3>Skewed Keys</h3>
+            <p>If one key has the majority of rows, that reducer will be slow (straggler). Mitigations:</p>
+            <ul>
+                <li>Increase numPartitions</li>
+                <li>Salting: temporarily shard the hot key</li>
+                <li>Consider DataFrame APIs with AQE (later)</li>
+            </ul>
+
+            <h4>Salting Example:</h4>
+            <div class="code-block">
+import random
+salted = kv.map(lambda kv: ((kv[0], random.randint(0, 9)), kv[1]))
+partial = salted.reduceByKey(lambda a,b: a+b)
+unsalted = partial.map(lambda kv: (kv[0][0], kv[1])).reduceByKey(lambda a,b: a+b)
+            </div>
+
+            <h3>Comparison with aggregateByKey/combineByKey</h3>
+            <ul>
+                <li><strong>reduceByKey(f)</strong> uses f for both within-partition and cross-partition combine.</li>
+                <li><strong>aggregateByKey(zeroValue, seqOp, combOp)</strong> lets you use different functions and a zero value.</li>
+                <li><strong>combineByKey</strong> is the most general (createCombiner, mergeValue, mergeCombiners).</li>
+                <li>If your logic can be expressed as a simple associative reduce, prefer reduceByKey.</li>
+            </ul>
+
+            <h3>Partitioner Preservation</h3>
+            <p>If your pair RDD already has a partitioner (from a previous wide op), reduceByKey preserves it. This helps performance when chaining join/cogroup. (Advanced; good to mention in exams.)</p>
+
+            <h3>One Key with Zero Elements</h3>
+            <p>Keys with no values simply don't exist in the pair RDD. reduceByKey doesn't create missing keys; you'd handle defaults later if needed.</p>
+        </section>
+
+        <section id="advanced-patterns" class="content-section">
+            <h2>Advanced Patterns</h2>
+            
+            <h3>1. Boolean Any/All per Key</h3>
+            <div class="code-block">
+# Any churn per mode?
+kv = clean.map(lambda r: (r[4], 1 if r[9] else 0))
+any_churn = kv.reduceByKey(lambda a,b: 1 if (a or b) else 0)
+print(any_churn.collect())
+            </div>
+
+            <h3>2. Reduce Lists Safely (If Lists are Small)</h3>
+            <div class="code-block">
+# (key, [small list]) and concatenate
+pairs = sc.parallelize([("a", [1,2]), ("a", [3]), ("b",[4])])
+res = pairs.reduceByKey(lambda a,b: a + b)   # concatenates lists
+print(res.collect())
+# Beware: if lists can be huge, prefer aggregateByKey with bounded buffers.
+            </div>
+
+            <h3>3. Reduce Sets (Deduplicate Within Key)</h3>
+            <div class="code-block">
+pairs = sc.parallelize([("a", {1,2}), ("a", {2,3}), ("b",{4})])
+res = pairs.reduceByKey(lambda a,b: a.union(b))
+print(res.collect())
+            </div>
+        </section>
+
+        <section id="practice" class="content-section">
+            <h2>Practice on Your Dataset</h2>
+            
+            <h3>Q1. Revenue by Mode (Skip None Charges)</h3>
+            <div class="code-block">
+rev_by_mode = (clean
+   .flatMap(lambda r: [] if r[8] is None else [(r[4], r[8])])
+   .reduceByKey(lambda a,b: a+b))
+print(rev_by_mode.collect())
+            </div>
+
+            <h3>Q2. Churn Count by Gender</h3>
+            <div class="code-block">
+churn_by_gender = (clean
+   .map(lambda r: (r[2], 1 if r[9] else 0))
+   .reduceByKey(lambda a,b: a+b))
+print(churn_by_gender.collect())
+            </div>
+
+            <h3>Q3. Average Charges by Mode</h3>
+            <div class="code-block">
+avg_charge_by_mode = (clean
+   .flatMap(lambda r: [] if r[8] is None else [(r[4], (r[8], 1))])
+   .reduceByKey(lambda a,b: (a[0]+b[0], a[1]+b[1]))
+   .mapValues(lambda sc: sc[0]/sc[1] if sc[1] else None))
+print(avg_charge_by_mode.collect())
+            </div>
+
+            <h3>Q4. Total Usage (Calls+SMS) by Gender (Treat None as 0)</h3>
+            <div class="code-block">
+kv = clean.map(lambda r: (r[2], (r[5] or 0) + (r[6] or 0)))
+usage_by_gender = kv.reduceByKey(lambda a,b: a+b)
+print(usage_by_gender.collect())
+            </div>
+
+            <h3>Q5. Min & Max Charges per Mode in One Pass</h3>
+            <p>Reduce pairs of (min,max):</p>
+            <div class="code-block">
+kv = clean.flatMap(lambda r: [] if r[8] is None else [(r[4], (r[8], r[8]))])
+minmax = kv.reduceByKey(lambda a,b: (min(a[0], b[0]), max(a[1], b[1])))
+print(minmax.collect())
+            </div>
+
+            <h3>Quick Troubleshooting Checklist</h3>
+            <div class="highlight-box error">
+                <ul>
+                    <li><strong>Error: "not enough values to unpack"</strong> → your RDD isn't (key, value). Fix your pair making step.</li>
+                    <li><strong>Weird results / order dependence</strong> → your reducer isn't associative/commutative.</li>
+                    <li><strong>NaNs propagate</strong> → clean before reducing.</li>
+                    <li><strong>Job slow / OOM</strong> → skewed key; add numPartitions, consider salting, or switch strategy.</li>
+                    <li><strong>Want top-N per key?</strong> → aggregateByKey (we can cover next), not reduceByKey.</li>
+                </ul>
+            </div>
+        </section>
+        
+        <div class="topic-navigation">
+            <div>
+                <a href="reduce.html" class="nav-link">
+                    ← Previous: Reduce Operations
+                </a>
+            </div>
+            <div>
+                <a href="mapvalues.html" class="nav-link">
+                    Next: MapValues →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+</body>
+</html>

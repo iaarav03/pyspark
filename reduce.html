@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Reduce Operations - Aggregation Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#what-reduce-does">Reduce Basics</a>
+                <a href="#examples">Examples</a>
+                <a href="#practice">Practice</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>Reduce Operations</h1>
+            <p>Aggregate data across your entire RDD with reduce, fold, and tree reduce</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="lambda.html">Lambda Functions</a> / Reduce Operations
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-reduce-does">What Does Reduce Do?</a></li>
+                <li><a href="#basic-examples">Basic Examples</a></li>
+                <li><a href="#edge-cases">Edge Cases & Behaviors</a></li>
+                <li><a href="#tree-reduce">TreeReduce</a></li>
+                <li><a href="#fold-vs-reduce">Fold vs Reduce vs Aggregate</a></li>
+                <li><a href="#telecom-examples">Telecom Dataset Examples</a></li>
+                <li><a href="#common-pitfalls">Common Pitfalls</a></li>
+                <li><a href="#practice">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="what-reduce-does" class="content-section">
+            <h2>What Does Reduce Do?</h2>
+            
+            <p><code>rdd.reduce(f)</code> collapses the ENTIRE RDD into one value by repeatedly applying a function <code>f(a, b)</code>.</p>
+
+            <div class="highlight-box">
+                <h4>Key Requirements:</h4>
+                <ul>
+                    <li><code>f</code> takes two items of the same type and returns one item of the same type</li>
+                    <li>Spark applies <code>f</code> within each partition first, then combines partition results</li>
+                    <li>Therefore, <code>f</code> should be <strong>associative and commutative</strong> (like +, max, min) so order doesn't matter</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="basic-examples" class="content-section">
+            <h2>Basic Examples (Toy RDDs)</h2>
+            
+            <h3>A) Sum Numbers</h3>
+            <div class="code-block">
+nums = sc.parallelize([1, 2, 3, 4])
+total = nums.reduce(lambda a, b: a + b)
+print(total)  # 10
+            </div>
+
+            <h3>B) Max / Min</h3>
+            <div class="code-block">
+nums = sc.parallelize([7, 2, 9, 4])
+mx = nums.reduce(lambda a, b: a if a > b else b)
+mn = nums.reduce(lambda a, b: a if a < b else b)
+print(mx, mn)  # 9 2
+            </div>
+
+            <h3>C) String Concatenation (Order is Arbitrary)</h3>
+            <div class="code-block">
+words = sc.parallelize(["a", "b", "c"])
+cat = words.reduce(lambda a, b: a + b)
+print(cat)  # 'abc' or 'bac' etc. (order NOT guaranteed across partitions)
+            </div>
+
+            <h3>D) Reducing Tuples (Same Type In & Out)</h3>
+            <div class="code-block">
+pairs = sc.parallelize([(1, 2), (3, 4), (5, 6)])
+summed = pairs.reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]))
+print(summed)  # (9, 12)
+            </div>
+
+            <div class="highlight-box error">
+                <h4>Important:</h4>
+                <p>Don't return a different type than the inputs. If inputs are tuples, output must be a tuple too.</p>
+            </div>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>Important Behaviors / Edge Cases</h2>
+            
+            <h3>1. Empty RDD → Error</h3>
+            <div class="code-block">
+empty = sc.parallelize([])
+# empty.reduce(lambda a,b: a+b)  # ValueError: Empty RDD
+            </div>
+
+            <h4>Safer Patterns:</h4>
+            <p>If you expect empties, prefer fold or aggregate, or guard:</p>
+            <div class="code-block">
+# Spark 3+: empty.isEmpty()
+res = 0 if empty.isEmpty() else empty.reduce(lambda a,b: a+b)
+# Older-safe: check empty.take(1)
+res = 0 if not empty.take(1) else empty.reduce(lambda a,b: a+b)
+            </div>
+
+            <h3>2. Single-Element RDD → Returns That Element</h3>
+            <div class="code-block">
+one = sc.parallelize([42])
+print(one.reduce(lambda a,b: a+b))  # 42
+            </div>
+
+            <h3>3. Non-Associative Functions → Inconsistent Results</h3>
+            <div class="code-block">
+nums = sc.parallelize([1,2,3,4])
+bad = nums.reduce(lambda a,b: a - b)  # NOT SAFE (depends on grouping/order)
+print(bad)  # unpredictable
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>Use Only Associative/Commutative Functions:</h4>
+                <p>Sum, min, max, set union, etc. are safe.</p>
+            </div>
+
+            <h3>4. Type Mixing & NaN</h3>
+            <div class="code-block">
+nums = sc.parallelize([1, 2.0, float('nan')])
+s = nums.reduce(lambda a,b: a + b)
+print(s)  # nan (once NaN appears, sums propagate NaN)
+            </div>
+
+            <p>Clean NaNs first if needed.</p>
+
+            <h3>5. Big Objects at the Driver</h3>
+            <div class="highlight-box warning">
+                <h4>Memory Warning:</h4>
+                <p>reduce returns one value to the driver. If that value is huge (e.g., concatenating long lists/strings), you can OOM the driver. Reduce to compact aggregates instead (e.g., sums, counts, top-K structure).</p>
+            </div>
+        </section>
+
+        <section id="tree-reduce" class="content-section">
+            <h2>TreeReduce (Performance Optimization)</h2>
+            
+            <p><code>rdd.treeReduce(f, depth=2)</code> reduces in a balanced tree, which can be more numerically stable/efficient for big data.</p>
+
+            <div class="code-block">
+nums = sc.parallelize(list(range(1_000_000)))
+s1 = nums.reduce(lambda a,b: a+b)
+s2 = nums.treeReduce(lambda a,b: a+b, depth=4)
+print(s1 == s2)  # True
+            </div>
+        </section>
+
+        <section id="fold-vs-reduce" class="content-section">
+            <h2>Fold vs Reduce vs Aggregate</h2>
+            
+            <div class="highlight-box">
+                <h4>Know the Differences:</h4>
+                <ul>
+                    <li><strong>reduce(f):</strong> no default. Fails on empty RDD. Types: A × A → A.</li>
+                    <li><strong>fold(zeroValue, f):</strong> like reduce but starts each partition and the final combine with a zero. f must take (A, A) → A and zeroValue must be type-compatible.</li>
+                    <li><strong>aggregate(zero, seqOp, combOp):</strong> different functions within partitions and across partitions; can change types. Very powerful for complex summaries.</li>
+                </ul>
+            </div>
+
+            <h3>Fold Example</h3>
+            <div class="code-block">
+nums = sc.parallelize([])
+total = nums.fold(0, lambda a,b: a+b)  # 0 (safe on empty)
+            </div>
+        </section>
+
+        <section id="telecom-examples" class="content-section">
+            <h2>Examples on Telecom Dataset</h2>
+            
+            <p>First, parse to a clean RDD (same parser we used earlier). Run once:</p>
+
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: return []
+    def zint(s): 
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    row = (
+        p[0].strip(),       # id
+        p[1].strip(),       # mobile
+        norm(p[2]),         # gender
+        norm(p[3]) == "Y",  # senior -> bool
+        norm(p[4]),         # mode
+        zint(p[5]),         # calls
+        zint(p[6]),         # sms
+        norm(p[7]),         # net
+        zfloat(p[8]),       # charges
+        norm(p[9]) == "Y"   # churn -> bool
+    )
+    return [row]
+
+clean = base.flatMap(parse_or_skip)
+print("clean sample:", clean.take(3))
+            </div>
+
+            <h3>1. Global Total Revenue (Sum of Charges, Skip None)</h3>
+            <div class="code-block">
+charges = clean.flatMap(lambda r: [] if r[8] is None else [r[8]])  # RDD[float]
+# If charges could be empty, fold is safer:
+total_rev = charges.fold(0.0, lambda a,b: a+b)  # or charges.reduce(lambda a,b: a+b) if non-empty
+print("Total revenue:", total_rev)
+            </div>
+
+            <h3>2. Global Min & Max Charge (Skip None)</h3>
+            <div class="code-block">
+charges = clean.flatMap(lambda r: [] if r[8] is None else [r[8]])
+min_charge = charges.reduce(lambda a,b: a if a < b else b)
+max_charge = charges.reduce(lambda a,b: a if a > b else b)
+print("Min/Max:", min_charge, max_charge)
+            </div>
+
+            <h3>3. Compute Sum, Count, Min, Max in ONE Pass with Tuple-Reduce</h3>
+            <div class="code-block">
+stats = (clean
+  .flatMap(lambda r: [] if r[8] is None else [(r[8], 1, r[8], r[8])])  # (sum, count, min, max)
+  .reduce(lambda a,b: (a[0]+b[0], a[1]+b[1], min(a[2],b[2]), max(a[3],b[3])))
+)
+sum_chg, cnt, mn, mx = stats
+avg = sum_chg / cnt if cnt else None
+print(f"sum={sum_chg}, count={cnt}, avg={avg}, min={mn}, max={mx}")
+            </div>
+
+            <h3>4. Global Churn Rate with Reduce</h3>
+            <p>Map each row to (churnCount, totalCount) then reduce pairwise.</p>
+            <div class="code-block">
+ct = clean.map(lambda r: (1 if r[9] else 0, 1)) \
+          .reduce(lambda a,b: (a[0]+b[0], a[1]+b[1]))
+churn_rate = ct[0] / ct[1] if ct[1] else 0.0
+print("Churn rate:", churn_rate)
+            </div>
+
+            <h3>5. Distinct Modes Present via Set Union</h3>
+            <div class="code-block">
+modes = clean.map(lambda r: {r[4]})                    # each element is a tiny set
+all_modes = modes.reduce(lambda a,b: a.union(b))       # set union is associative/commutative
+print(all_modes)                                       # e.g., {'POSTPAID','PREPAID'}
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>Be Careful with Size:</h4>
+                <p>If the resulting set could be huge, the driver may run out of memory. This is okay for small vocabularies like modes/status tags.</p>
+            </div>
+        </section>
+
+        <section id="common-pitfalls" class="content-section">
+            <h2>Common Pitfalls (Exam-Friendly)</h2>
+            
+            <div class="highlight-box error">
+                <h4>Don't Lose Marks - Avoid These:</h4>
+                <ul>
+                    <li><strong>Empty input</strong> → reduce throws ValueError. Use fold(zero, f), or guard with isEmpty() / take(1).</li>
+                    <li><strong>Non-associative ops</strong> (e.g., subtraction, string concat where order must be preserved) → nondeterministic results.</li>
+                    <li><strong>Type mismatch:</strong> f must accept two same-type values and return the same type.</li>
+                    <li><strong>Side effects:</strong> don't mutate external state inside reduce. The function runs on executors; side effects won't come back to the driver.</li>
+                    <li><strong>NaN propagation:</strong> once a NaN enters a numeric reduce, result may be NaN; clean first.</li>
+                    <li><strong>Huge reduced value:</strong> final value lives on the driver; don't reduce to a gigantic object.</li>
+                    <li><strong>Performance:</strong> For keyed aggregation, don't use a full-collection reduce. Use reduceByKey (map-side combine).</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="practice" class="content-section">
+            <h2>Practice Exercises</h2>
+            
+            <h3>Q1. Robust Revenue Stats with Fold</h3>
+            <p>Compute global (sum, count) of charges using fold so it also works when there are no valid charges.</p>
+            <p><strong>Hint:</strong> map charges to (sum, count) pairs, use zero (0.0, 0), and fold with pairwise addition.</p>
+
+            <h3>Q2. Senior Customers' Average Charge using Reduce</h3>
+            <p>Filter clean to senior == True, extract charges (skip None), then reduce to (sum,count) and compute average.</p>
+
+            <h3>Q3. Max Calls Among Churned Customers with Reduce</h3>
+            <p>Filter to churn == True, keep only valid calls (ints), then reduce with max.</p>
+
+            <h3>Quick "Cheat Bullets" for Exams</h3>
+            <div class="highlight-box">
+                <ul>
+                    <li><strong>reduce(f):</strong> whole RDD → one value; needs associative+commutative f; fails on empty.</li>
+                    <li><strong>fold(z, f):</strong> like reduce but with a zero (safe on empty); f must take same type as elements.</li>
+                    <li><strong>treeReduce(f, depth):</strong> balanced tree combining; can help stability/perf.</li>
+                    <li><strong>For per-key aggregation,</strong> prefer reduceByKey (map-side combine) over groupByKey.</li>
+                    <li><strong>Use tuple-reduce</strong> to compute multiple stats in one pass ((sum,count,min,max)).</li>
+                </ul>
+            </div>
+        </section>
+        
+        <div class="topic-navigation">
+            <div>
+                <a href="lambda.html" class="nav-link">
+                    ← Previous: Lambda Functions
+                </a>
+            </div>
+            <div>
+                <a href="reducebykey.html" class="nav-link">
+                    Next: ReduceByKey →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+</body>
+</html>

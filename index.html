@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Learning Hub - Complete Guide to Apache Spark with Python</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1>🔥 PySpark Learning Hub</h1>
+            </div>
+            <div class="nav-links">
+                <a href="#overview">Overview</a>
+                <a href="#topics">Topics</a>
+                <a href="#getting-started">Get Started</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section id="hero" class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">Master PySpark</h1>
+                <p class="hero-subtitle">Complete guide to Apache Spark with Python - from basics to advanced concepts</p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">11</span>
+                        <span class="stat-label">Core Topics</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">1000+</span>
+                        <span class="stat-label">Code Examples</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">∞</span>
+                        <span class="stat-label">Learning</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="overview" class="overview">
+            <div class="container">
+                <h2>What You'll Learn</h2>
+                <div class="overview-grid">
+                    <div class="overview-card">
+                        <div class="card-icon">📚</div>
+                        <h3>Fundamentals</h3>
+                        <p>Start with PySpark basics, RDD creation, and core concepts</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">🔧</div>
+                        <h3>Transformations</h3>
+                        <p>Master map, filter, flatMap, and other essential transformations</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">⚡</div>
+                        <h3>Actions</h3>
+                        <p>Learn reduce, collect, and other actions to execute computations</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">🔗</div>
+                        <h3>Advanced Operations</h3>
+                        <p>Explore joins, groupBy, and complex data processing patterns</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="topics" class="topics">
+            <div class="container">
+                <h2>Learning Path</h2>
+                <p class="section-subtitle">Follow this structured path to master PySpark step by step</p>
+                
+                <div class="topics-grid">
+                    <a href="basic.html" class="topic-card-link">
+                        <div class="topic-card beginner">
+                            <div class="topic-header">
+                                <span class="topic-level">Beginner</span>
+                                <span class="topic-icon">🌱</span>
+                            </div>
+                            <h3>PySpark Basics</h3>
+                            <p>Get started with RDD creation, loading data, and fundamental concepts. Perfect for beginners.</p>
+                            <div class="topic-highlights">
+                                <span>RDD Creation</span>
+                                <span>Data Loading</span>
+                                <span>Basic Operations</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="filter.html" class="topic-card-link">
+                        <div class="topic-card beginner">
+                            <div class="topic-header">
+                                <span class="topic-level">Beginner</span>
+                                <span class="topic-icon">🔍</span>
+                            </div>
+                            <h3>Filter Operations</h3>
+                            <p>Learn how to filter data using conditions, lambda functions, and complex predicates.</p>
+                            <div class="topic-highlights">
+                                <span>Lambda Functions</span>
+                                <span>Predicates</span>
+                                <span>Data Filtering</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="map.html" class="topic-card-link">
+                        <div class="topic-card beginner">
+                            <div class="topic-header">
+                                <span class="topic-level">Beginner</span>
+                                <span class="topic-icon">🗺️</span>
+                            </div>
+                            <h3>Map Transformations</h3>
+                            <p>Transform data with map operations, parsing, and type conversions.</p>
+                            <div class="topic-highlights">
+                                <span>Data Transformation</span>
+                                <span>Type Conversion</span>
+                                <span>Parsing</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="flatmap.html" class="topic-card-link">
+                        <div class="topic-card intermediate">
+                            <div class="topic-header">
+                                <span class="topic-level">Intermediate</span>
+                                <span class="topic-icon">📊</span>
+                            </div>
+                            <h3>FlatMap Operations</h3>
+                            <p>Understand the difference between map and flatMap, and when to use each.</p>
+                            <div class="topic-highlights">
+                                <span>Data Explosion</span>
+                                <span>Nested Structures</span>
+                                <span>Generators</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="lambda.html" class="topic-card-link">
+                        <div class="topic-card beginner">
+                            <div class="topic-header">
+                                <span class="topic-level">Beginner</span>
+                                <span class="topic-icon">⚡</span>
+                            </div>
+                            <h3>Lambda Functions</h3>
+                            <p>Master anonymous functions and their usage in PySpark transformations.</p>
+                            <div class="topic-highlights">
+                                <span>Anonymous Functions</span>
+                                <span>Closures</span>
+                                <span>Functional Programming</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="reduce.html" class="topic-card-link">
+                        <div class="topic-card intermediate">
+                            <div class="topic-header">
+                                <span class="topic-level">Intermediate</span>
+                                <span class="topic-icon">🔄</span>
+                            </div>
+                            <h3>Reduce Operations</h3>
+                            <p>Aggregate data across your entire RDD with reduce, fold, and tree reduce.</p>
+                            <div class="topic-highlights">
+                                <span>Aggregation</span>
+                                <span>Fold Operations</span>
+                                <span>Tree Reduce</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="reducebykey.html" class="topic-card-link">
+                        <div class="topic-card intermediate">
+                            <div class="topic-header">
+                                <span class="topic-level">Intermediate</span>
+                                <span class="topic-icon">🔑</span>
+                            </div>
+                            <h3>ReduceByKey</h3>
+                            <p>Perform key-wise aggregations efficiently with reduceByKey operations.</p>
+                            <div class="topic-highlights">
+                                <span>Key-Value Pairs</span>
+                                <span>Aggregation by Key</span>
+                                <span>Performance Optimization</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="mapvalues.html" class="topic-card-link">
+                        <div class="topic-card intermediate">
+                            <div class="topic-header">
+                                <span class="topic-level">Intermediate</span>
+                                <span class="topic-icon">📝</span>
+                            </div>
+                            <h3>MapValues</h3>
+                            <p>Transform only the values in key-value pair RDDs while preserving keys.</p>
+                            <div class="topic-highlights">
+                                <span>Value Transformation</span>
+                                <span>Key Preservation</span>
+                                <span>Pair RDDs</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="groupbykey.html" class="topic-card-link">
+                        <div class="topic-card intermediate">
+                            <div class="topic-header">
+                                <span class="topic-level">Intermediate</span>
+                                <span class="topic-icon">📦</span>
+                            </div>
+                            <h3>GroupByKey</h3>
+                            <p>Group values by their keys and understand when to use vs reduceByKey.</p>
+                            <div class="topic-highlights">
+                                <span>Data Grouping</span>
+                                <span>Iterator Handling</span>
+                                <span>Performance Considerations</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="join.html" class="topic-card-link">
+                        <div class="topic-card advanced">
+                            <div class="topic-header">
+                                <span class="topic-level">Advanced</span>
+                                <span class="topic-icon">🔗</span>
+                            </div>
+                            <h3>Join Operations</h3>
+                            <p>Master inner, outer, left, and right joins with RDDs and optimization techniques.</p>
+                            <div class="topic-highlights">
+                                <span>Inner/Outer Joins</span>
+                                <span>Broadcast Joins</span>
+                                <span>Performance Tuning</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+
+                    <a href="sortbykey.html" class="topic-card-link">
+                        <div class="topic-card intermediate">
+                            <div class="topic-header">
+                                <span class="topic-level">Intermediate</span>
+                                <span class="topic-icon">🔢</span>
+                            </div>
+                            <h3>SortByKey</h3>
+                            <p>Sort your RDDs by key with various ordering options and performance considerations.</p>
+                            <div class="topic-highlights">
+                                <span>Sorting</span>
+                                <span>Key Ordering</span>
+                                <span>Performance Optimization</span>
+                            </div>
+                            <div class="card-arrow">→</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="getting-started" class="getting-started">
+            <div class="container">
+                <h2>Getting Started</h2>
+                <div class="getting-started-content">
+                    <div class="start-card">
+                        <h3>🚀 Quick Start</h3>
+                        <p>New to PySpark? Start with the <strong>PySpark Basics</strong> to understand RDDs and fundamental concepts.</p>
+                        <a href="basic.html" class="btn btn-primary">Start Learning</a>
+                    </div>
+                    <div class="start-card">
+                        <h3>📖 Study Guide</h3>
+                        <p>Follow the structured learning path from beginner to advanced topics for comprehensive understanding.</p>
+                        <a href="#topics" class="btn btn-secondary">View All Topics</a>
+                    </div>
+                    <div class="start-card">
+                        <h3>💡 Practice</h3>
+                        <p>Each topic includes practical examples and exercises to reinforce your learning.</p>
+                        <a href="basic.html" class="btn btn-secondary">See Examples</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+                 // Function to bypass password screen
+         function bypassPasswordScreen() {
+             if (passwordScreen) {
+                 passwordScreen.style.display = 'none';
+             }
+             
+             // Always skip splash for returning users - go directly to main content
+             if (welcomeSplash) {
+                 welcomeSplash.style.display = 'none';
+             }
+         }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                                                  // Don't mark splash as shown - we want it to show only on first login
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Add click tracking and visual feedback for topic cards
+        document.querySelectorAll('.topic-card-link').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Add a subtle click effect
+                this.style.transform = 'translateY(-4px) scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+
+            // Add keyboard navigation support
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+
+        // Add intersection observer for animation triggers
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe topic cards for scroll animations
+        document.querySelectorAll('.topic-card').forEach(card => {
+            observer.observe(card);
+        });
+        
+                 // Simple loading animation for splash screen
+         const loadingText = document.querySelector('.loading-text');
+         if (loadingText) {
+             setTimeout(() => {
+                 loadingText.textContent = 'Almost ready...';
+             }, 2000);
+             
+             setTimeout(() => {
+                 loadingText.textContent = 'Ready to learn! 🚀';
+                 loadingText.style.color = '#4ecdc4';
+             }, 3500);
+         }
+         
+         // Click to skip splash functionality
+         const splash = document.getElementById('welcomeSplash');
+         if (splash) {
+             splash.addEventListener('click', () => {
+                 splash.classList.add('hidden');
+                 setTimeout(() => {
+                     splash.style.display = 'none';
+                 }, 1000);
+             });
+         }
+        
+        // Add some sound effects (optional - can be commented out)
+        const playStartupSound = () => {
+            // Create audio context for subtle sound effects
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        };
+        
+                 // Play startup sound after a delay (uncomment if desired)
+         // setTimeout(playStartupSound, 1000);
+         
+         // Hamburger Menu Functionality
+         const hamburgerMenu = document.getElementById('hamburgerMenu');
+         const navOverlay = document.getElementById('navOverlay');
+         const navClose = document.getElementById('navClose');
+         
+         if (hamburgerMenu && navOverlay && navClose) {
+             // Open menu
+             hamburgerMenu.addEventListener('click', () => {
+                 navOverlay.classList.add('active');
+                 document.body.style.overflow = 'hidden';
+             });
+             
+             // Close menu
+             navClose.addEventListener('click', () => {
+                 navOverlay.classList.remove('active');
+                 document.body.style.overflow = '';
+             });
+             
+             // Close menu when clicking on overlay background
+             navOverlay.addEventListener('click', (e) => {
+                 if (e.target === navOverlay) {
+                     navOverlay.classList.remove('active');
+                     document.body.style.overflow = '';
+                 }
+             });
+             
+             // Close menu on escape key
+             document.addEventListener('keydown', (e) => {
+                 if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                     navOverlay.classList.remove('active');
+                     document.body.style.overflow = '';
+                 }
+             });
+         }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Add session status indicator
+        function addSessionIndicator() {
+            const sessionData = localStorage.getItem(sessionKey);
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    const timeLeft = sessionDuration - (currentTime - session.timestamp);
+                    const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
+                    const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+                    
+                    if (logoutBtn && timeLeft > 0) {
+                        logoutBtn.title = `Session expires in ${hoursLeft}h ${minutesLeft}m. Click to logout now.`;
+                    }
+                } catch (e) {
+                    console.log('Session indicator error:', e);
+                }
+            }
+        }
+        
+        // Update session indicator every minute and check for expiration
+        addSessionIndicator();
+        const sessionCheckInterval = setInterval(() => {
+            addSessionIndicator();
+            
+            // Check if session is about to expire (less than 1 hour left)
+            const sessionData = localStorage.getItem(sessionKey);
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    const timeLeft = sessionDuration - (currentTime - session.timestamp);
+                    
+                    // If less than 1 hour left, show warning
+                    if (timeLeft > 0 && timeLeft < (60 * 60 * 1000)) {
+                        const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
+                        const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+                        
+                        if (minutesLeft <= 30 && !document.querySelector('.session-warning')) {
+                            showSessionWarning(hoursLeft, minutesLeft);
+                        }
+                    }
+                    
+                    // If session expired, force reload
+                    if (timeLeft <= 0) {
+                        localStorage.removeItem(sessionKey);
+                        alert('Your session has expired. Please enter the password again.');
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    console.log('Session check error:', e);
+                }
+            }
+        }, 60000);
+        
+        // Function to show session expiration warning
+        function showSessionWarning(hours, minutes) {
+            const warning = document.createElement('div');
+            warning.className = 'session-warning';
+            warning.innerHTML = `
+                <div class="warning-content">
+                    <span class="warning-icon">⏰</span>
+                    <span class="warning-text">Session expires in ${hours}h ${minutes}m</span>
+                    <button class="extend-session">Extend</button>
+                    <button class="dismiss-warning">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(warning);
+            
+            // Add event listeners
+            warning.querySelector('.extend-session').addEventListener('click', () => {
+                // Extend session by creating a new one
+                createSession();
+                warning.remove();
+                
+                // Show success message
+                showNotification('Session extended for 24 hours! ✨', 'success');
+            });
+            
+            warning.querySelector('.dismiss-warning').addEventListener('click', () => {
+                warning.remove();
+            });
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (document.body.contains(warning)) {
+                    warning.remove();
+                }
+            }, 10000);
+        }
+        
+        // Function to show notifications
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Trigger animation
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+
+        
+
+    </script>
+    
+    <!-- Preload fonts for better performance -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" as="style">
+</body>
+</html>

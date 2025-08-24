@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lambda Functions in PySpark - Anonymous Functions Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#what-is-lambda">What is Lambda?</a>
+                <a href="#examples">Examples</a>
+                <a href="#edge-cases">Edge Cases</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>Lambda Functions</h1>
+            <p>Master anonymous functions and their usage in PySpark transformations</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / Lambda Functions
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-is-lambda">What is Lambda?</a></li>
+                <li><a href="#basic-syntax">Basic Syntax</a></li>
+                <li><a href="#examples">Lambda Examples</a></li>
+                <li><a href="#edge-cases">Key Edge Cases</a></li>
+                <li><a href="#pyspark-usage">Lambda in PySpark</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+
+        <section id="what-is-lambda" class="content-section">
+            <h2>What is Lambda in Python?</h2>
+            
+            <p><strong>lambda</strong> = a way to write a small anonymous function (a function without a name).</p>
+
+            <div class="highlight-box">
+                <h4>Basic Syntax:</h4>
+                <pre><code>lambda arguments: expression</code></pre>
+                <p>The expression is automatically returned.</p>
+            </div>
+
+            <h3>Simple Example</h3>
+            <div class="code-block">
+# Create a simple lambda function
+f = lambda x: x + 1
+
+# Test the function
+print(f(5))   # Output: 6
+            </div>
+
+            <p>It's the same as:</p>
+            <div class="code-block">
+def f(x):
+    return x + 1
+            </div>
+
+            <h3>Why Use Lambda?</h3>
+            <ul>
+                <li>Short, one-line functions</li>
+                <li>Common inside Spark <code>map</code>, <code>filter</code>, etc.</li>
+                <li>Functional programming style</li>
+                <li>No need to define a separate named function for simple operations</li>
+            </ul>
+        </section>
+
+        <section id="basic-syntax" class="content-section">
+            <h2>Basic Syntax and Examples</h2>
+            
+            <h3>Single Argument Lambda</h3>
+            <div class="code-block">
+# Lambda is just a short one-line function:
+add1 = lambda x: x + 1
+print(add1(5))  # 6
+            </div>
+
+            <h3>Multiple Arguments</h3>
+            <div class="code-block">
+# Multi-arg:
+mul = lambda x, y: x * y
+print(mul(2, 4))  # 8
+            </div>
+
+            <h3>Default Arguments</h3>
+            <div class="code-block">
+# Default arg:
+bump = lambda x=10: x + 5
+print(bump(), bump(2))  # 15 7
+            </div>
+        </section>
+
+        <section id="examples" class="content-section">
+            <h2>Lambda Examples in Different Contexts</h2>
+            
+            <h3>With Built-in Functions</h3>
+            <div class="code-block">
+# Using lambda with map()
+numbers = [1, 2, 3, 4, 5]
+squared = list(map(lambda x: x**2, numbers))
+print(squared)  # [1, 4, 9, 16, 25]
+
+# Using lambda with filter()
+evens = list(filter(lambda x: x % 2 == 0, numbers))
+print(evens)  # [2, 4]
+
+# Using lambda with sorted()
+words = ['python', 'java', 'c', 'javascript']
+sorted_by_length = sorted(words, key=lambda x: len(x))
+print(sorted_by_length)  # ['c', 'java', 'python', 'javascript']
+            </div>
+
+            <h3>Conditional Expressions in Lambda</h3>
+            <div class="code-block">
+# Ternary operator in lambda
+max_val = lambda x, y: x if x > y else y
+print(max_val(10, 5))  # 10
+
+# More complex condition
+classify = lambda x: "positive" if x > 0 else "negative" if x < 0 else "zero"
+print(classify(-5))  # negative
+print(classify(0))   # zero
+print(classify(3))   # positive
+            </div>
+
+            <h3>Lambda with Complex Expressions</h3>
+            <div class="code-block">
+# Mathematical operations
+hypotenuse = lambda a, b: (a**2 + b**2)**0.5
+print(hypotenuse(3, 4))  # 5.0
+
+# String operations
+capitalize_words = lambda s: ' '.join(word.capitalize() for word in s.split())
+print(capitalize_words("hello world"))  # Hello World
+            </div>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>Key Lambda Edge Cases (Exam-Worthy)</h2>
+            
+            <h3>1. One Expression Only</h3>
+            <div class="highlight-box warning">
+                <h4>Limitation:</h4>
+                <p>Lambda can only contain a single expression. If your logic is long, use a named function.</p>
+            </div>
+
+            <div class="code-block">
+# This WON'T work in lambda:
+# lambda x: 
+#     if x > 0:
+#         return "positive"
+#     else:
+#         return "negative"
+
+# Use this instead:
+lambda x: "positive" if x > 0 else "negative"
+            </div>
+
+            <h3>2. Closures Capture by Reference (Not by Value)</h3>
+            <div class="code-block">
+factor = 3
+times = lambda x: x * factor
+print(times(4))  # 12
+
+factor = 5
+print(times(4))  # 20  (uses latest factor!)
+            </div>
+
+            <div class="highlight-box error">
+                <h4>Common Trap in Loops:</h4>
+            </div>
+
+            <div class="code-block">
+# WRONG - all functions will use the final value of i
+funcs = []
+for i in range(3):
+    funcs.append(lambda x: x * i)
+
+for f in funcs:
+    print(f(10))  # 20, 20, 20 (all use i=2)
+
+# RIGHT - capture the value at definition time
+funcs = []
+for i in range(3):
+    funcs.append(lambda x, multiplier=i: x * multiplier)
+
+for f in funcs:
+    print(f(10))  # 0, 10, 20 (correct)
+            </div>
+
+            <h3>3. Truthiness in Filter Operations</h3>
+            <div class="code-block">
+# A lambda can return any value; filter treats "truthy" as keep, "falsy" as drop
+values = [0, 1, 2, "", "hello", [], [1, 2]]
+
+# Falsy values: 0, "", []
+# Truthy values: 1, 2, "hello", [1, 2]
+truthy_values = list(filter(lambda x: x, values))
+print(truthy_values)  # [1, 2, 'hello', [1, 2]]
+            </div>
+
+            <div class="highlight-box">
+                <h4>Best Practice:</h4>
+                <p>Prefer explicit True/False for clarity in filter operations.</p>
+            </div>
+
+            <h3>4. Exceptions Inside Lambda</h3>
+            <div class="highlight-box error">
+                <h4>Warning:</h4>
+                <p>Exceptions inside lambda fail your job. Use a named function if you need try/except.</p>
+            </div>
+
+            <div class="code-block">
+# This will crash if there are non-numeric strings:
+# numbers = ["1", "2", "abc", "4"]
+# converted = list(map(lambda x: int(x), numbers))  # ValueError!
+
+# Better approach - use a named function:
+def safe_int(x):
+    try:
+        return int(x)
+    except ValueError:
+        return 0  # or None, or skip
+
+numbers = ["1", "2", "abc", "4"]
+converted = list(map(safe_int, numbers))
+print(converted)  # [1, 2, 0, 4]
+            </div>
+        </section>
+
+        <section id="pyspark-usage" class="content-section">
+            <h2>Lambda in PySpark</h2>
+            
+            <h3>Common PySpark Lambda Patterns</h3>
+            <div class="code-block">
+# Filter operations
+rdd = sc.parallelize([1, 2, 3, 4, 5, 6])
+evens = rdd.filter(lambda x: x % 2 == 0)
+print(evens.collect())  # [2, 4, 6]
+
+# Map operations
+doubled = rdd.map(lambda x: x * 2)
+print(doubled.collect())  # [2, 4, 6, 8, 10, 12]
+
+# Reduce operations
+total = rdd.reduce(lambda x, y: x + y)
+print(total)  # 21
+            </div>
+
+            <h3>Working with Tuples (Pair RDDs)</h3>
+            <div class="code-block">
+# Create pair RDD
+pairs = sc.parallelize([("a", 1), ("b", 2), ("a", 3)])
+
+# Extract keys
+keys = pairs.map(lambda kv: kv[0])
+print(keys.collect())  # ['a', 'b', 'a']
+
+# Extract values
+values = pairs.map(lambda kv: kv[1])
+print(values.collect())  # [1, 2, 3]
+
+# Transform values only
+incremented = pairs.mapValues(lambda v: v + 1)
+print(incremented.collect())  # [('a', 2), ('b', 3), ('a', 4)]
+            </div>
+
+            <h3>Complex Data Processing</h3>
+            <div class="code-block">
+# Working with CSV-like data
+data = sc.parallelize([
+    "John,25,Engineer",
+    "Jane,30,Doctor",
+    "Bob,35,Teacher"
+])
+
+# Parse and transform
+parsed = data.map(lambda line: line.split(","))
+adults = parsed.filter(lambda fields: int(fields[1]) >= 30)
+names = adults.map(lambda fields: fields[0])
+print(names.collect())  # ['Jane', 'Bob']
+            </div>
+        </section>
+
+        <section id="best-practices" class="content-section">
+            <h2>Best Practices</h2>
+            
+            <div class="highlight-box success">
+                <h4>When to Use Lambda:</h4>
+                <ul>
+                    <li>Simple, one-line transformations</li>
+                    <li>Short-lived operations in map/filter/reduce</li>
+                    <li>When the logic is clear and readable</li>
+                    <li>For functional programming patterns</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>When NOT to Use Lambda:</h4>
+                <ul>
+                    <li>Complex logic that needs multiple statements</li>
+                    <li>When you need exception handling (try/except)</li>
+                    <li>When the lambda becomes hard to read</li>
+                    <li>When you need to reuse the same logic multiple times</li>
+                </ul>
+            </div>
+
+            <h3>Lambda vs Named Functions - Examples</h3>
+            <div class="code-block">
+# Good use of lambda - simple and clear
+numbers = sc.parallelize([1, 2, 3, 4, 5])
+squares = numbers.map(lambda x: x ** 2)
+
+# Better as named function - complex logic
+def parse_and_validate(line):
+    if not line.strip():
+        return None
+    parts = line.split(",")
+    if len(parts) < 3:
+        return None
+    try:
+        age = int(parts[1])
+        return (parts[0], age, parts[2])
+    except ValueError:
+        return None
+
+# Use the named function
+data = sc.parallelize(["John,25,Engineer", "Jane,abc,Doctor", "Bob,35,Teacher"])
+parsed = data.map(parse_and_validate).filter(lambda x: x is not None)
+print(parsed.collect())  # [('John', 25, 'Engineer'), ('Bob', 35, 'Teacher')]
+            </div>
+
+            <h3>Performance Considerations</h3>
+            <div class="code-block">
+# Avoid heavy operations in lambda
+# BAD - expensive operation repeated
+expensive_data = sc.parallelize(range(1000000))
+result = expensive_data.map(lambda x: some_heavy_computation(x))
+
+# BETTER - use broadcast for shared data
+shared_lookup = sc.broadcast(create_lookup_table())
+result = expensive_data.map(lambda x: shared_lookup.value.get(x, default_value))
+            </div>
+
+            <h3>Debugging Tips</h3>
+            <div class="code-block">
+# Debugging lambda functions can be tricky
+# Use take() to test with small samples first
+test_data = rdd.take(5)
+for item in test_data:
+    try:
+        result = (lambda x: your_lambda_logic(x))(item)
+        print(f"{item} -> {result}")
+    except Exception as e:
+        print(f"Error with {item}: {e}")
+            </div>
+        </section>
+
+        <div class="topic-navigation">
+            <div>
+                <a href="map.html" class="nav-link">
+                    ← Previous: Map Operations
+                </a>
+            </div>
+            <div>
+                <a href="reduce.html" class="nav-link">
+                    Next: Reduce Operations →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

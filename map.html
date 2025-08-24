@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Map Operations - Complete Guide to Data Transformation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#what-map-does">Map Basics</a>
+                <a href="#parsing">Parsing</a>
+                <a href="#examples">Examples</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>Map Transformations</h1>
+            <p>Transform data with map operations, parsing, and type conversions in PySpark</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="filter.html">Filter Operations</a> / Map Transformations
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-map-does">What Map Does</a></li>
+                <li><a href="#basic-mapping">Basic Mapping</a></li>
+                <li><a href="#csv-parsing">CSV Parsing with Map</a></li>
+                <li><a href="#robust-parsing">Robust CSV Parsing</a></li>
+                <li><a href="#normalization">Data Normalization</a></li>
+                <li><a href="#common-pitfalls">Common Pitfalls</a></li>
+                <li><a href="#exercises">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="what-map-does" class="content-section">
+            <h2>What Map Does</h2>
+            
+            <p><code>map(f)</code> applies a function <code>f</code> to every element and returns a new RDD of the same number of elements.</p>
+
+            <div class="highlight-box">
+                <h4>Key Points:</h4>
+                <ul>
+                    <li>It <strong>transforms</strong> data; it does not drop rows (that's <code>filter</code>)</li>
+                    <li>It's <strong>lazy</strong> (won't run until an action like <code>take</code>/<code>count</code>)</li>
+                    <li>Input and output RDDs have the <strong>same number of elements</strong></li>
+                </ul>
+            </div>
+
+            <h3>Simple Example</h3>
+            <div class="code-block">
+nums = sc.parallelize([1, 2, 3])
+doubled = nums.map(lambda x: x * 2)   # → [2, 4, 6]
+doubled.take(3)
+            </div>
+        </section>
+
+        <section id="basic-mapping" class="content-section">
+            <h2>Basic Mapping Operations</h2>
+            
+            <h3>1. Load Your File & Prep a Safe Base RDD</h3>
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+print("preview:", rdd.take(3))
+
+# Drop empty lines
+non_empty = rdd.filter(lambda l: l and l.strip())
+
+# Remove header explicitly (classic pattern)
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+print("base preview:", base.take(3))
+            </div>
+
+            <div class="highlight-box">
+                <h4>Column Index Map (0-based):</h4>
+                <p>0:CustomerID, 1:Mobile, 2:Gender, 3:SeniorFlag, 4:Mode, 5:Calls, 6:SMS, 7:InternetStatus, 8:MonthlyCharges, 9:ChurnFlag</p>
+            </div>
+
+            <h3>2. Map (Simple): Split Each Line into a List of Columns</h3>
+            <div class="code-block">
+parts = base.map(lambda line: line.split(","))
+print(parts.take(2))
+            </div>
+
+            <p>This is the most common first step. But plain <code>split(",")</code> has limits (quoted commas in fields).</p>
+
+            <div class="highlight-box warning">
+                <h4>Edge Cases:</h4>
+                <ul>
+                    <li>Some lines may be short → indexing errors later. Solution: validate length after mapping</li>
+                    <li>Extra spaces/casing → normalize with <code>.strip()</code>/<code>.upper()</code> when needed</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="csv-parsing" class="content-section">
+            <h2>Map to a Cleaned Tuple (Parsed & Normalized)</h2>
+            
+            <p>This is the "real" value of map: convert strings to useful Python types.</p>
+
+            <div class="code-block">
+def parse_basic(cols):
+    """
+    cols: list[str] from split(",")
+    returns a tuple with typed/normalized fields OR None if invalid
+    """
+    if len(cols) < 10:
+        return None
+
+    def to_int(s):
+        try: return int(s.strip())
+        except: return None
+
+    def to_float(s):
+        try: return float(s.strip())
+        except: return None
+
+    cust_id   = cols[0].strip()
+    mobile    = cols[1].strip()
+    gender    = (cols[2] or "").strip().upper()
+    senior    = (cols[3] or "").strip().upper() == "Y"     # bool
+    mode      = (cols[4] or "").strip().upper()            # PREPAID/POSTPAID
+    calls     = to_int(cols[5])
+    sms       = to_int(cols[6])
+    net_stat  = (cols[7] or "").strip().upper()            # ACTIVE/INACTIVE/...
+    charges   = to_float(cols[8])
+    churn     = (cols[9] or "").strip().upper() == "Y"     # bool
+
+    return (cust_id, mobile, gender, senior, mode, calls, sms, net_stat, charges, churn)
+
+parsed_basic = parts.map(parse_basic)
+print("parsed preview:", parsed_basic.take(3))
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>Important Pattern:</h4>
+                <p>Map can't drop bad rows, so we return <code>None</code> for invalids and then filter them out:</p>
+            </div>
+
+            <div class="code-block">
+parsed_ok = parsed_basic.filter(lambda row: row is not None)
+print("ok preview:", parsed_ok.take(3))
+            </div>
+        </section>
+
+        <section id="robust-parsing" class="content-section">
+            <h2>Robust CSV Parsing (Quoted Commas) with mapPartitions</h2>
+            
+            <p>Plain <code>split(",")</code> breaks on values like "Doe, John". The robust approach uses Python's CSV parser:</p>
+
+            <div class="code-block">
+import csv
+from io import StringIO
+
+def parse_partition(lines_iter):
+    reader = csv.reader(lines_iter)
+    for cols in reader:
+        if not cols or len(cols) < 10:
+            yield None
+            continue
+
+        def to_int(s):
+            try: return int(s.strip())
+            except: return None
+
+        def to_float(s):
+            try: return float(s.strip())
+            except: return None
+
+        cust_id   = cols[0].strip()
+        mobile    = cols[1].strip()
+        gender    = (cols[2] or "").strip().upper()
+        senior    = (cols[3] or "").strip().upper() == "Y"
+        mode      = (cols[4] or "").strip().upper()
+        calls     = to_int(cols[5])
+        sms       = to_int(cols[6])
+        net_stat  = (cols[7] or "").strip().upper()
+        charges   = to_float(cols[8])
+        churn     = (cols[9] or "").strip().upper() == "Y"
+
+        yield (cust_id, mobile, gender, senior, mode, calls, sms, net_stat, charges, churn)
+
+# IMPORTANT: remove header before csv.reader, otherwise header becomes a data row
+robust_parts = base.mapPartitions(parse_partition)
+parsed_ok2 = robust_parts.filter(lambda row: row is not None)
+print("robust preview:", parsed_ok2.take(3))
+            </div>
+
+            <div class="highlight-box">
+                <h4>Why mapPartitions?</h4>
+                <p>It lets the CSV reader stream through a whole partition efficiently (faster than creating a new reader per line).</p>
+            </div>
+        </section>
+
+        <section id="normalization" class="content-section">
+            <h2>Normalize with Lookups (and Broadcast Example)</h2>
+            
+            <p>Suppose your file has many variants: "prepaid", "PRE-PAID", "pp". Use a lookup map. If the map is big, broadcast it.</p>
+
+            <div class="code-block">
+NORMAL_MODE = {
+    "PREPAID": "PREPAID",
+    "PRE-PAID": "PREPAID",
+    "PP": "PREPAID",
+    "POSTPAID": "POSTPAID",
+    "POST-PAID": "POSTPAID",
+    "PSTPD": "POSTPAID",
+}
+b_mode = sc.broadcast(NORMAL_MODE)
+
+def normalize_mode(s):
+    key = (s or "").strip().upper()
+    return b_mode.value.get(key, key)   # default to original upper-case
+
+def with_normalized_mode(row):
+    # row is the tuple we built earlier
+    if row is None: return None
+    return (row[0], row[1], row[2], row[3], normalize_mode(row[4]),
+            row[5], row[6], row[7], row[8], row[9])
+
+normalized = parsed_ok2.map(with_normalized_mode).filter(lambda r: r is not None)
+print("normalized preview:", normalized.take(3))
+            </div>
+
+            <div class="highlight-box">
+                <h4>Edge Case:</h4>
+                <p>Avoid capturing large dicts inside map directly; broadcasting sends it once per executor.</p>
+            </div>
+        </section>
+
+        <section id="common-pitfalls" class="content-section">
+            <h2>Common Map Pitfalls</h2>
+            
+            <div class="highlight-box error">
+                <h4>Don't Lose Marks - Avoid These Mistakes:</h4>
+                <ul>
+                    <li><strong>"Map doesn't drop rows"</strong>: it always returns same count. To remove bad data, return None in map and follow with <code>filter(row is not None)</code></li>
+                    <li><strong>Exceptions inside map crash tasks</strong>. Use try/except in your parser and return None</li>
+                    <li><strong>Order</strong>: don't rely on global order; map runs in parallel</li>
+                    <li><strong>Printing inside map</strong> spams executors; not reliable for debugging. Use <code>take(n)</code></li>
+                    <li><strong>Heavy work per row</strong> (like big regexes) slows jobs; precompile regexes or broadcast lookup tables</li>
+                    <li><strong>Define functions at top-level</strong> so Spark can serialize them easily</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="exercises" class="content-section">
+            <h2>Practice Exercises</h2>
+            
+            <p>Use <code>parsed_ok2</code> (robust parser) or <code>parsed_ok</code> (simple parser) depending on whether your data has quoted commas.</p>
+
+            <h3>Exercise A: Project Specific Columns</h3>
+            <p>Keep (CustomerID, MonthlyCharges, ChurnFlag) only.</p>
+            <div class="code-block">
+proj = parsed_ok2.map(lambda r: (r[0], r[8], r[9]))
+print(proj.take(5))
+            </div>
+
+            <h3>Exercise B: Derive a New Field</h3>
+            <p>Add a charge bucket: <30 = LOW, 30–70 = MID, >70 = HIGH.</p>
+            <div class="code-block">
+def add_charge_bucket(row):
+    if row is None: return None
+    charge = row[8]
+    if charge is None: bucket = "UNK"
+    elif charge < 30: bucket = "LOW"
+    elif charge <= 70: bucket = "MID"
+    else: bucket = "HIGH"
+    return row + (bucket,)
+
+with_bucket = parsed_ok2.map(add_charge_bucket).filter(lambda r: r is not None)
+print(with_bucket.take(5))
+            </div>
+
+            <h3>Exercise C: Make a Pair RDD</h3>
+            <p>Key as Gender, value as 1 (for later aggregations).</p>
+            <div class="code-block">
+gender_pairs = parsed_ok2.map(lambda r: (r[2], 1))
+print(gender_pairs.take(5))   # e.g., ('M',1), ('F',1)...
+            </div>
+
+            <h3>Exercise D: Normalize Internet Status Synonyms</h3>
+            <p>Treat ACTIVE/ENABLED/ON as "ACTIVE", everything else "INACTIVE".</p>
+            <div class="code-block">
+ACTIVE = {"ACTIVE","ENABLED","ON"}
+def norm_net(row):
+    if row is None: return None
+    status = (row[7] or "").upper()
+    norm = "ACTIVE" if status in ACTIVE else "INACTIVE"
+    return row[:7] + (norm,) + row[8:]
+
+net_normed = parsed_ok2.map(norm_net).filter(lambda r: r is not None)
+print(net_normed.take(5))
+            </div>
+
+            <h3>Exercise E: Safe Numeric Parsing</h3>
+            <p>Reparse Calls/SMS (col 5/6) as 0 if invalid.</p>
+            <div class="code-block">
+def fix_counts(row):
+    if row is None: return None
+    def nz_int(x): 
+        try: return int(x) if x is not None else 0
+        except: return 0
+    calls = nz_int(row[5]); sms = nz_int(row[6])
+    return (row[0], row[1], row[2], row[3], row[4], calls, sms, row[7], row[8], row[9])
+
+counts_fixed = parsed_ok2.map(fix_counts).filter(lambda r: r is not None)
+print(counts_fixed.take(5))
+            </div>
+
+            <h3>Ultra-Clear "Named Parser" (Beginner-Friendly)</h3>
+            <p>This keeps everything in one place and is perfect for exams:</p>
+            <div class="code-block">
+def parse_line(line):
+    # guard header/empty
+    if not line or not line.strip():
+        return None
+    cols = line.split(",")           # replace with csv.reader via mapPartitions if needed
+    if len(cols) < 10:
+        return None
+
+    def to_int(s):
+        try: return int(s.strip())
+        except: return None
+    def to_float(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s): 
+        return (s or "").strip().upper()
+
+    cust_id   = cols[0].strip()
+    mobile    = cols[1].strip()
+    gender    = norm(cols[2])
+    senior    = norm(cols[3]) == "Y"
+    mode      = norm(cols[4])
+    calls     = to_int(cols[5])
+    sms       = to_int(cols[6])
+    net       = norm(cols[7])
+    charge    = to_float(cols[8])
+    churn     = norm(cols[9]) == "Y"
+
+    return (cust_id, mobile, gender, senior, mode, calls, sms, net, charge, churn)
+
+clean = base.map(parse_line).filter(lambda r: r is not None)
+print(clean.take(5))
+            </div>
+        </section>
+
+        <section id="practice-question" class="content-section">
+            <h2>Practice Question</h2>
+            
+            <h3>Practice #1 — Parse & Tag Telecom Rows (Map-Only + Filter)</h3>
+            
+            <p><strong>Goal:</strong> Using only map and filter (plus actions like count()/take() for checking), build a clean RDD and then produce a small derived view.</p>
+
+            <h4>Task:</h4>
+            <ol>
+                <li>Load <code>/data/TelecomData.csv</code>, drop empty lines and the header.</li>
+                <li>Parse with map each line into a typed tuple: <code>(customer_id:str, mobile:str, gender:str, senior:bool, mode:str, calls:int|None, sms:int|None, net_status:str, charges:float|None, churn:bool)</code></li>
+                <li>Normalize text with <code>.strip().upper()</code> for gender, senior, mode, net_status.</li>
+                <li>Convert calls, sms to int (set None if invalid).</li>
+                <li>Convert charges to float (set None if invalid).</li>
+                <li>If the row has fewer than 10 columns, return None.</li>
+                <li>Filter out None rows to obtain <code>clean</code>.</li>
+                <li>Define ACTIVE synonyms as <code>{"ACTIVE","ENABLED","ON"}</code> and normalize net_status to exactly "ACTIVE" or "INACTIVE" (still using map).</li>
+                <li>From <code>clean</code>, filter to rows that are:
+                    <ul>
+                        <li><code>senior == True</code></li>
+                        <li><code>churn == True</code></li>
+                        <li><code>mode == "POSTPAID"</code></li>
+                        <li><code>net_status == "ACTIVE"</code></li>
+                        <li><code>calls >= 30</code> (treat None as not satisfying)</li>
+                    </ul>
+                    Call this RDD <code>selected</code>.
+                </li>
+                <li>Map <code>selected</code> to <code>(customer_id, charge_bucket)</code> where:
+                    <ul>
+                        <li><code>charges < 30</code> → "LOW"</li>
+                        <li><code>30 ≤ charges ≤ 70</code> → "MID"</li>
+                        <li><code>charges > 70</code> → "HIGH"</li>
+                        <li><code>charges is None</code> → "UNK"</li>
+                    </ul>
+                    Call this RDD <code>tagged</code>.
+                </li>
+            </ol>
+
+            <h4>Show:</h4>
+            <ul>
+                <li><code>clean.count()</code></li>
+                <li><code>selected.count()</code></li>
+                <li><code>tagged.take(10)</code> (preview)</li>
+            </ul>
+
+            <h4>Edge Cases You Must Handle:</h4>
+            <div class="highlight-box warning">
+                <ul>
+                    <li>Header and empty/whitespace lines.</li>
+                    <li>Short/malformed rows (len < 10).</li>
+                    <li>Bad numbers (<code>int("N/A")</code>, <code>float("")</code>) → set to None safely.</li>
+                    <li>Case/whitespace differences (" y ", "postpaid").</li>
+                </ul>
+            </div>
+
+            <p><strong>Do not use DataFrames/SQL/regex/reduce* yet—stick to map + filter.</strong></p>
+
+            <h4>Tiny Scaffold (Fill in the TODOs):</h4>
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+def parse_line(line):
+    # TODO: split, validate len>=10, normalize text, safe int/float casts
+    # return tuple or None
+    ...
+
+clean = base.map(parse_line).filter(lambda r: r is not None)
+
+ACTIVE = {"ACTIVE","ENABLED","ON"}
+def normalize_net(row):
+    # TODO: map net_status to "ACTIVE"/"INACTIVE"
+    ...
+
+clean = clean.map(normalize_net)
+
+selected = clean.filter(lambda r: ...)
+tagged = selected.map(lambda r: (r[0], ...))  # (customer_id, charge_bucket)
+
+print("clean:", clean.count())
+print("selected:", selected.count())
+print("sample:", tagged.take(10))
+            </div>
+        </section>
+
+        <div class="topic-navigation">
+            <div>
+                <a href="filter.html" class="nav-link">
+                    ← Previous: Filter Operations
+                </a>
+            </div>
+            <div>
+                <a href="flatmap.html" class="nav-link">
+                    Next: FlatMap Operations →
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

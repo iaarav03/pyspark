@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark SortByKey - Sorting Operations Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#what-sortbykey-does">SortByKey Basics</a>
+                <a href="#examples">Examples</a>
+                <a href="#optimization">Optimization</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>SortByKey Operations</h1>
+            <p>Sort your RDDs by key with various ordering options and performance considerations</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="join.html">Join Operations</a> / SortByKey
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#what-sortbykey-does">What SortByKey Does</a></li>
+                <li><a href="#warm-ups">Warm-up Examples</a></li>
+                <li><a href="#telecom-setup">Telecom Dataset Setup</a></li>
+                <li><a href="#building-pairs">Building Pair RDDs and Sorting</a></li>
+                <li><a href="#top-k">Top-K Operations</a></li>
+                <li><a href="#performance">Performance & Advanced Notes</a></li>
+                <li><a href="#edge-cases">Edge Cases</a></li>
+                <li><a href="#practice">Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="what-sortbykey-does" class="content-section">
+            <h2>What SortByKey Does (One Line)</h2>
+            
+            <p><code>sortByKey(ascending=True, numPartitions=None)</code> works on a pair RDD <code>[(key, value)]</code> and returns a new RDD globally sorted by the key.</p>
+
+            <div class="highlight-box warning">
+                <h4>Important Requirements:</h4>
+                <ul>
+                    <li>It's a <strong>wide shuffle</strong> (can be expensive)</li>
+                    <li><strong>Needs a pair RDD:</strong> each element must be a 2-item record (key, value)</li>
+                    <li><strong>Keys must be orderable</strong> (comparable with &lt;, &gt;): e.g., all ints, or all str</li>
+                    <li>Mixed types (e.g., int + str) → TypeError</li>
+                    <li>Keys like None → TypeError (cannot compare)</li>
+                </ul>
+            </div>
+
+            <p>Sorting shuffles the whole dataset and range-partitions it so partitions themselves are in order (near "total order").</p>
+        </section>
+
+        <section id="warm-ups" class="content-section">
+            <h2>Warm-ups (Toy Data)</h2>
+            
+            <h3>A) Basic Ascending / Descending</h3>
+            <div class="code-block">
+pairs = sc.parallelize([("b", 2), ("a", 1), ("c", 3)])
+print(pairs.sortByKey().collect())              # [('a',1), ('b',2), ('c',3)]
+print(pairs.sortByKey(ascending=False).collect())  # [('c',3), ('b',2), ('a',1)]
+            </div>
+
+            <h3>B) Numbers Stored as Strings (Lexicographic Trap)</h3>
+            <div class="code-block">
+pairs = sc.parallelize([("10","x"), ("2","y"), ("1","z")])
+print(pairs.sortByKey().collect())  # [('1','z'), ('10','x'), ('2','y')]  ← '10' before '2'
+
+# Fix: convert to int BEFORE sorting
+pairs_num = sc.parallelize([(int(k), v) for (k, v) in [("10","x"),("2","y"),("1","z")]])
+print(pairs_num.sortByKey().collect())  # [(1,'z'), (2,'y'), (10,'x')]
+            </div>
+
+            <h3>C) Tuple Keys for Secondary Sort</h3>
+            <div class="code-block">
+# Sort by first ascending, then second descending
+pairs = sc.parallelize([(("A", 10), "x"), (("A", 5), "y"), (("B", 7), "z")])
+# For second DESC, store negative:
+print(pairs.sortByKey().collect())
+# → [(('A', 5),'y'), (('A',10),'x'), (('B',7),'z')]
+
+pairs2 = sc.parallelize([(("A", -10),"x"), (("A", -5),"y"), (("B",-7),"z")])
+print(pairs2.sortByKey().collect())
+# Now effectively: by first asc, second desc because we negated it.
+            </div>
+
+            <h3>D) What If the Key is a List? (Unhashable & Unorderable)</h3>
+            <div class="code-block">
+# sc.parallelize([([1,2], "x")]).sortByKey().collect()  # TypeError: '<' not supported...
+# Always use hashable, orderable keys: numbers, strings, tuples of orderables.
+            </div>
+        </section>
+
+        <section id="telecom-setup" class="content-section">
+            <h2>Your Dataset Setup (Run Once)</h2>
+            
+            <div class="code-block">
+rdd = sc.textFile("/data/TelecomData.csv")
+
+# drop empties + header
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+# simple parser via flatMap (skips malformed by returning [])
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: return []
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    row = (
+        p[0].strip(),        # 0 id
+        p[1].strip(),        # 1 mobile
+        norm(p[2]),          # 2 gender
+        norm(p[3]) == "Y",   # 3 senior (bool)
+        norm(p[4]),          # 4 mode
+        zint(p[5]),          # 5 calls
+        zint(p[6]),          # 6 sms
+        norm(p[7]),          # 7 net
+        zfloat(p[8]),        # 8 charges
+        norm(p[9]) == "Y"    # 9 churn (bool)
+    )
+    return [row]
+
+clean = base.flatMap(parse_or_skip)
+print("clean preview:", clean.take(3))
+# row: (id, mobile, gender, senior, mode, calls, sms, net, charges, churn)
+            </div>
+        </section>
+
+        <section id="building-pairs" class="content-section">
+            <h2>Building Pair RDDs and Sorting</h2>
+            
+            <h3>A) Sort Customers by Monthly Charges (Ascending & Descending)</h3>
+            <div class="code-block">
+# Skip None charges; pair as (charges, id)
+charges_pairs = clean.flatMap(lambda r: [] if r[8] is None else [(r[8], r[0])])
+
+asc = charges_pairs.sortByKey()                  # lowest first
+print("lowest 5:", asc.take(5))
+
+desc = charges_pairs.sortByKey(ascending=False)  # highest first
+print("highest 5:", desc.take(5))
+            </div>
+
+            <div class="highlight-box">
+                <h4>Why This Shape?</h4>
+                <p>sortByKey sorts by the first element → put the field you want to sort by as the key.</p>
+            </div>
+
+            <h3>B) Sort Within Groups Using Tuple Keys (e.g., by Mode, then Charges Desc)</h3>
+            <div class="code-block">
+# Key = (mode, -charges) to get charges descending within each mode
+mode_charge_pairs = clean.flatMap(
+    lambda r: [] if r[8] is None else [((r[4], -r[8]), (r[0], r[8]))]
+)
+# After sorting, drop the composite key
+sorted_mode_desc = mode_charge_pairs.sortByKey().map(lambda kv: kv[1])
+print(sorted_mode_desc.take(10))
+# → rows ordered by mode ASC, and within each mode by charges DESC
+            </div>
+
+            <h3>C) Keys That Are Strings But Should Be Numeric</h3>
+            <div class="code-block">
+# Example: sort by CALLS, treating missing as skip
+calls_pairs = clean.flatMap(lambda r: [] if r[5] is None else [(r[5], r[0])])  # r[5] is int already
+print(calls_pairs.sortByKey(ascending=False).take(5))
+            </div>
+
+            <h3>D) Case-Insensitive Key Normalization</h3>
+            <div class="code-block">
+# Sort by MODE case-insensitively (we already uppercased in parser)
+by_mode = clean.map(lambda r: (r[4], r[0]))  # (mode, id)
+print(by_mode.sortByKey().take(10))
+            </div>
+        </section>
+
+        <section id="top-k" class="content-section">
+            <h2>When You Only Need Top-K (Don't Full-Sort!)</h2>
+            
+            <p>If you just need the largest/smallest few, use <code>takeOrdered</code> (no full shuffle).</p>
+
+            <div class="code-block">
+# Top 10 charges with their customer IDs:
+top10 = (clean
+   .flatMap(lambda r: [] if r[8] is None else [(r[8], r[0])])
+   .takeOrdered(10, key=lambda x: -x[0])     # highest first
+)
+print(top10)
+            </div>
+
+            <div class="highlight-box success">
+                <h4>Exam Gold:</h4>
+                <p>Use takeOrdered/top for top-K; avoid global sort when you only need a few results.</p>
+            </div>
+        </section>
+
+        <section id="performance" class="content-section">
+            <h2>Performance Knobs & Advanced Notes</h2>
+            
+            <h3>Shuffle Cost</h3>
+            <p>sortByKey shuffles everything and range-partitions the RDD. It's expensive on big data.</p>
+
+            <h3>numPartitions</h3>
+            <p>You can control reducers:</p>
+            <div class="code-block">
+sorted_many = charges_pairs.sortByKey(ascending=True, numPartitions=64)
+            </div>
+
+            <h3>Skew</h3>
+            <p>If many identical keys or hot ranges, some partitions become heavy. You can:</p>
+            <ul>
+                <li>increase numPartitions</li>
+                <li>pre-bucket (advanced), or</li>
+                <li>if you only need top-K, use takeOrdered.</li>
+            </ul>
+
+            <h3>Total Order</h3>
+            <p>The returned RDD is partitioned so that each partition holds a key range; iterating partitions in order yields a global ordering.</p>
+
+            <h3>Duplicates</h3>
+            <p>Stable ordering among identical keys is not guaranteed (Spark may shuffle differently across runs). If you need a stable tiebreaker, use tuple keys like (primaryKey, secondaryKey).</p>
+
+            <h3>Mixed Types in Keys</h3>
+            <p>sortByKey will fail on Python 3 if keys are not mutually comparable (e.g., some int, some str).</p>
+
+            <h3>sortBy vs sortByKey</h3>
+            <ul>
+                <li><strong>sortBy(func)</strong> lets you compute a derived key (works on any RDD, not just pairs).</li>
+                <li><strong>sortByKey()</strong> sorts by the existing key in a pair RDD.</li>
+            </ul>
+
+            <div class="code-block">
+# Example equivalent to sorting by charges:
+# using sortBy on full rows
+sorted_rows = clean.filter(lambda r: r[8] is not None).sortBy(lambda r: r[8])
+            </div>
+
+            <h3>Very Large Values</h3>
+            <p>Don't build giant values to carry along while sorting. Keep the value small (e.g., just the ID, or a tiny tuple).</p>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>Edge Cases You'll Be Tested On</h2>
+            
+            <div class="highlight-box error">
+                <h4>Common Pitfalls:</h4>
+                <ul>
+                    <li><strong>Empty pair RDD</strong> → sortByKey returns empty (no error).</li>
+                    <li><strong>None keys</strong> → TypeError. Filter them out before sorting.</li>
+                    <li><strong>NaN keys</strong> (floats): comparisons with nan are tricky; remove them or map to sentinels.</li>
+                    <li><strong>String numbers</strong> → lexicographic order ("10" < "2"). Convert to int/float first.</li>
+                    <li><strong>Case differences</strong> ("a" vs "A"): default ASCII order puts uppercase before lowercase. Normalize with .upper() or .lower().</li>
+                    <li><strong>Secondary sort:</strong> use tuple keys, and for descending secondary, store negative or invert sort in the tuple.</li>
+                    <li><strong>Top-K:</strong> Prefer takeOrdered/top instead of full sort (fast, low memory).</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="practice" class="content-section">
+            <h2>Practice Exercises</h2>
+            
+            <h3>Q1. Highest 5 Charges (Two Ways)</h3>
+            <p>(a) With sortByKey on (charge, id) descending, take(5).</p>
+            <p>(b) With takeOrdered(5, key=lambda kv: -kv[0]).</p>
+            <p>Verify both give the same IDs (order may differ if equal charges).</p>
+
+            <div class="code-block">
+# Q1
+charges_pairs = clean.flatMap(lambda r: [] if r[8] is None else [(r[8], r[0])])
+print(charges_pairs.sortByKey(False).take(5))
+print(charges_pairs.takeOrdered(5, key=lambda kv: -kv[0]))
+            </div>
+
+            <h3>Q2. Mode, Then Charges Desc (Secondary Sort)</h3>
+            <p>Build ((mode, -charge), (id, charge)), sortByKey, drop key. Show first 10 rows.</p>
+
+            <div class="code-block">
+# Q2
+mode_charge = clean.flatMap(lambda r: [] if r[8] is None else [((r[4], -r[8]), (r[0], r[8]))])
+print(mode_charge.sortByKey().map(lambda kv: kv[1]).take(10))
+            </div>
+
+            <h3>Q3. Sort by Gender Then ID (Both Ascending)</h3>
+            <p>Use ((gender, id), <anything>) as key. Return (gender, id) list for the first 10.</p>
+
+            <div class="code-block">
+# Q3
+gender_id = clean.map(lambda r: ((r[2], r[0]), None)).sortByKey().map(lambda kv: kv[0])
+print(gender_id.take(10))
+            </div>
+
+            <h3>Q4. Guard Mixed Types</h3>
+            <p>Intentionally create a pair RDD with keys ["2", 10] and try sortByKey() to see the error. Then fix by converting the string "2" → 2 first.</p>
+
+            <div class="code-block">
+# Q4 (error demo, then fix)
+bad = sc.parallelize([("2","x"), (10,"y")])
+# bad.sortByKey().collect()  # TypeError on Python 3
+good = sc.parallelize([(int("2"), "x"), (10, "y")]).sortByKey().collect()
+print(good)
+            </div>
+        </section>
+        
+        <div class="topic-navigation">
+            <div>
+                <a href="join.html" class="nav-link">
+                    ← Previous: Join Operations
+                </a>
+            </div>
+            <div class="nav-link disabled">
+                Next Topic →
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+</body>
+</html>
