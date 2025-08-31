@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark DataFrame Operations - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="content-header">
+        <div class="content-title">
+            <h1>📊 PySpark DataFrame Operations</h1>
+            <p>Master all DataFrame operations with detailed explanations, edge cases, and exam-ready examples</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="#dataframe-operations">DataFrame Operations</a>
+        </div>
+    </header>
+
+    <main class="content-body">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#key-concepts">Key Concepts: F and lit</a></li>
+                <li><a href="#setup">Setting Up SparkSession & Demo DataFrame</a></li>
+                <li><a href="#creating-dataframes">Creating DataFrames (All Methods)</a></li>
+                <li><a href="#rdd-to-dataframe">RDD to DataFrame with namedtuple</a></li>
+                <li><a href="#temp-views">Temporary Views for SQL</a></li>
+                <li><a href="#dataframe-methods">Core DataFrame Methods</a>
+                    <ul>
+                        <li><a href="#printschema">printSchema()</a></li>
+                        <li><a href="#show">show()</a></li>
+                        <li><a href="#select">select()</a></li>
+                        <li><a href="#filter-where">filter() & where()</a></li>
+                        <li><a href="#groupby-agg">groupBy() & agg()</a></li>
+                        <li><a href="#distinct">distinct()</a></li>
+                        <li><a href="#orderby">orderBy()</a></li>
+                        <li><a href="#limit">limit()</a></li>
+                    </ul>
+                </li>
+                <li><a href="#filtering-anomalies">Filtering Anomalies with SQL</a></li>
+                <li><a href="#arisconn-pipeline">Complete Arisconn Pipeline</a></li>
+                <li><a href="#exam-traps">Exam Traps & Edge Cases</a></li>
+                <li><a href="#practice-qa">Practice Q&A</a></li>
+                <li><a href="#high-value-traps">High-Value Exam Traps</a></li>
+                <li><a href="#rapid-qa">Rapid Q&A</a></li>
+                <li><a href="#tricky-quiz">Tricky Quiz with Answers</a></li>
+            </ul>
+        </div>
+
+        <!-- Key Concepts -->
+        <section id="key-concepts" class="content-section">
+            <h2>🔑 Two Important Names You'll See Everywhere: F and lit</h2>
+            
+            <div class="highlight-box success">
+                <h4>What is F?</h4>
+                <p><strong>F</strong> is just a short nickname we use for the module <code>pyspark.sql.functions</code>.</p>
+                <div class="code-block">
+from pyspark.sql import functions as F
+                </div>
+                <p><strong>Why a nickname?</strong> That module contains many column functions (like <code>col</code>, <code>when</code>, <code>avg</code>, <code>sum</code>). Writing <code>F.col("x")</code> is shorter and clearer than <code>pyspark.sql.functions.col("x")</code>.</p>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>What is lit?</h4>
+                <p><strong>lit</strong> means <strong>literal</strong>. It creates a column that is a constant value.</p>
+                <div class="code-block">
+F.lit(1)          # a column whose value is 1 for every row
+F.lit("hello")    # a column whose value is "hello" for every row
+                </div>
+                <p><strong>Typical uses:</strong></p>
+                <ul>
+                    <li>Add a constant column: <code>df.withColumn("country", F.lit("IN"))</code></li>
+                    <li>Use a constant inside an expression: <code>df.select((F.col("visits") + F.lit(1)).alias("visits_plus_one"))</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Setup -->
+        <section id="setup" class="content-section">
+            <h2>🚀 Setting Up SparkSession & Demo DataFrame</h2>
+            
+            <h3>Creating SparkSession</h3>
+            <p>You need a SparkSession object called <code>spark</code>. In the PySpark shell it already exists. In a script:</p>
+            
+            <div class="code-block">
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F  # <- this is our 'F'
+
+spark = spark if 'spark' in globals() else (
+    SparkSession.builder.appName("ModuleDemo").getOrCreate()
+)
+            </div>
+            
+            <h3>Creating a Demo DataFrame</h3>
+            <p>Let's prepare a tiny in-memory DataFrame we'll use for generic examples:</p>
+            
+            <div class="code-block">
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, BooleanType
+
+schema = StructType([
+    StructField("id",        StringType(),  False),
+    StructField("city",      StringType(),  True),
+    StructField("score",     DoubleType(),  True),
+    StructField("visits",    IntegerType(), True),
+    StructField("registered",BooleanType(), True),
+])
+
+data = [
+    ("U1", "Delhi",     88.5, 10, True),
+    ("U2", "Mumbai",    92.0,  7, False),
+    ("U3", "Delhi",     None,  0, True),   # score is null
+    ("U4", "Chennai",   65.0,  2, True),
+    ("U5", "Bengaluru", 92.0, 12, None),   # registered is null
+    ("U6", None,        72.0,  3, False),  # city is null
+]
+
+df = spark.createDataFrame(data, schema)
+            </div>
+        </section>
+
+        <!-- Creating DataFrames -->
+        <section id="creating-dataframes" class="content-section">
+            <h2>📝 Creating DataFrames - All Methods You Need</h2>
+            
+            <h3>Method 1: From a CSV File with SparkSession</h3>
+            
+            <div class="highlight-box">
+                <h4>Functions used:</h4>
+                <ul>
+                    <li><strong>spark.read</strong> → reader entry point</li>
+                    <li><strong>.option("header", True|False)</strong> → whether the first line has column names</li>
+                    <li><strong>.option("inferSchema", True|False)</strong> → guess column types or keep as strings</li>
+                    <li><strong>.csv(path)</strong> → read CSV</li>
+                    <li><strong>.withColumnRenamed(old, new)</strong> → rename columns to safe names</li>
+                </ul>
+            </div>
+            
+            <h4>If the file has a header row:</h4>
+            <div class="code-block">
+df_file = (spark.read
+           .option("header", True)
+           .option("inferSchema", True)
+           .csv("/path/to/file.csv"))
+
+df_file.show(5, truncate=False)
+df_file.printSchema()
+            </div>
+            
+            <h4>If the file has NO header:</h4>
+            <div class="code-block">
+df_nohdr = (spark.read
+            .option("header", False)
+            .option("inferSchema", True)
+            .csv("/path/to/file.csv")
+            .toDF("c1","c2","c3"))  # name the columns yourself
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>Edge cases you'll be tested on:</h4>
+                <ul>
+                    <li>If you set <code>header=True</code> but the file has no header, Spark will treat the first data row as column names → queries break. Fix with <code>header=False</code> + <code>.toDF(...)</code>.</li>
+                    <li>Columns with special characters (e.g., <code>Senior(Y/N)</code>) are painful in SQL. Either use backticks in SQL (<code>`Senior(Y/N)`</code>) or rename once to safe names.</li>
+                </ul>
+            </div>
+            
+            <h3>Method 2: From Python Data</h3>
+            <div class="code-block">
+data = [
+    ("TXCUST00001", "982120000", "MALE", "Y", "POSTPAID", 20, 5, "ACTIVE", 49.99, "N"),
+    ("TXCUST00002", "982120001", "FEMALE", "N", "PREPAID", 12, 2, "INACTIVE", 19.50, "Y"),
+]
+
+cols = ["CustomerID","Mobile","Gender","SeniorYN","Mode",
+        "Calls","SMS","InternetStatus","MonthlyCharges","ChurnYN"]
+
+df_small = spark.createDataFrame(data, schema=cols)
+df_small.show(truncate=False)
+            </div>
+        </section>
+
+        <!-- RDD to DataFrame -->
+        <section id="rdd-to-dataframe" class="content-section">
+            <h2>🔄 Building DataFrame from RDD (Using namedtuple)</h2>
+            
+            <p>Two ways—both start from an RDD and use a namedtuple so column names are preserved.</p>
+            
+            <div class="code-block">
+from collections import namedtuple
+sc = spark.sparkContext
+
+# Example RDD of CSV lines
+rdd_lines = sc.parallelize([
+    "SEN_1,CAR_1,12.3,45.6,100,50,60,70,80.0,ERR_X,1700000000",
+    "SEN_2,CAR_2,13.3,46.6,110,55,65,75,85.0,INF_X,1700000100",
+])
+
+# Define namedtuple (column names)
+Cars = namedtuple('Cars', [
+    'sensorid','carid','latitude','longitude',
+    'engine_speed','accelerator_pedal_position','vehicle_speed',
+    'torque_at_transmission','fuel_level','TypeOfMessage','timestamp'
+])
+
+def parse(line):
+    p = [x.strip() for x in line.split(",")]
+    if len(p) < 11:
+        return None               # malformed row
+    try:
+        return Cars(
+            p[0], p[1], float(p[2]), p[3], int(p[4]), int(p[5]),
+            int(p[6]), int(p[7]), float(p[8]), p[9], float(p[10])
+        )
+    except:
+        return None               # casting failed (e.g., "?")
+
+rdd_struct = rdd_lines.map(parse).filter(lambda x: x is not None)
+            </div>
+            
+            <h3>Way A — toDF():</h3>
+            <div class="code-block">
+df_rdd1 = rdd_struct.toDF()
+df_rdd1.show()
+df_rdd1.printSchema()
+            </div>
+            
+            <h3>Way B — spark.createDataFrame(RDD):</h3>
+            <div class="code-block">
+df_rdd2 = spark.createDataFrame(rdd_struct)
+df_rdd2.show()
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Exam trap: difference?</h4>
+                <ul>
+                    <li><strong>toDF()</strong> is a method on RDD and uses the row's fields (namedtuple/Row) to name columns.</li>
+                    <li><strong>createDataFrame()</strong> is more general (RDD, Python list, Pandas DF, + optional explicit schema).</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Temp Views -->
+        <section id="temp-views" class="content-section">
+            <h2>🗃️ Turning a DataFrame into an SQL Table (Temp View)</h2>
+            
+            <p><strong>Function:</strong> <code>createOrReplaceTempView(name)</code></p>
+            
+            <div class="code-block">
+df.createOrReplaceTempView("t")            # register
+spark.sql("SELECT COUNT(*) FROM t").show() # query it
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>Important notes:</h4>
+                <ul>
+                    <li>Temp views are session-scoped. New notebook/session? → register again.</li>
+                    <li>If you rename/modify the DataFrame, recreate the view so SQL sees the changes.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- DataFrame Methods -->
+        <section id="dataframe-methods" class="content-section">
+            <h2>🔧 Core DataFrame Operations (Deep + Examples + Gotchas)</h2>
+            
+            <p>We will use <code>df</code> from the setup section. Every time I use a function, I'll say what it does.</p>
+        </section>
+
+        <!-- printSchema -->
+        <section id="printschema" class="content-section">
+            <h2>4.1 printSchema() — Show Names + Types</h2>
+            
+            <div class="code-block">
+df.printSchema()
+            </div>
+            
+            <p>Helps you confirm e.g., <code>visits</code> is int, <code>score</code> is double, etc.</p>
+            
+            <div class="highlight-box">
+                <h4>Trick:</h4>
+                <p>If types are wrong (e.g., numbers read as strings), fix by casting:</p>
+                <div class="code-block">
+df = df.withColumn("visits", F.col("visits").cast("int"))
+                </div>
+            </div>
+        </section>
+
+        <!-- show -->
+        <section id="show" class="content-section">
+            <h2>4.2 show() — Print Rows (Display Only)</h2>
+            
+            <div class="code-block">
+df.show(5, truncate=False)                 # print 5 rows completely
+df.show(truncate=10)                       # cut cells to 10 chars (display only)
+df.show(5, truncate=False, vertical=True)  # one row per block
+            </div>
+            
+            <ul>
+                <li><strong>truncate</strong> affects printing, not the actual data.</li>
+                <li><strong>vertical=True</strong> is handy for wide tables.</li>
+            </ul>
+            
+            <div class="highlight-box warning">
+                <h4>Exam trap:</h4>
+                <p><code>show()</code> is NOT saving or changing data; it's just printing.</p>
+            </div>
+        </section>
+
+        <!-- select -->
+        <section id="select" class="content-section">
+            <h2>4.3 select() — Pick Columns or Build Expressions</h2>
+            
+            <div class="highlight-box">
+                <h4>Functions used inside:</h4>
+                <ul>
+                    <li><strong>F.col("name")</strong> → refers to a column</li>
+                    <li><strong>F.lit(value)</strong> → a constant column (this is lit)</li>
+                    <li><strong>.alias("NewName")</strong> → rename the expression result</li>
+                </ul>
+            </div>
+            
+            <h3>Pick columns:</h3>
+            <div class="code-block">
+df.select("id", "city", "score").show()
+            </div>
+            
+            <h3>Build expressions:</h3>
+            <div class="code-block">
+df.select(
+    F.col("city").alias("City"),
+    (F.col("visits") + F.lit(1)).alias("visits_plus_one"),
+    (F.col("score") * F.lit(1.1)).alias("score_110pct")
+).show()
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>Tricks:</h4>
+                <ul>
+                    <li>Misspelling a column → runtime error ("cannot resolve column ...").</li>
+                    <li>If a column has special characters (spaces, parentheses), rename once with <code>withColumnRenamed</code>, or use backticks in SQL.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- filter & where -->
+        <section id="filter-where" class="content-section">
+            <h2>4.4 filter() and where() — Keep Matching Rows</h2>
+            
+            <p>They are identical. You can write conditions in two ways:</p>
+            
+            <h3>A) Expression style (recommended in Python)</h3>
+            
+            <div class="highlight-box">
+                <h4>New operators to know:</h4>
+                <ul>
+                    <li><strong>&</strong> = AND</li>
+                    <li><strong>|</strong> = OR</li>
+                    <li><strong>~</strong> = NOT</li>
+                    <li><strong>.isNull()</strong> / <strong>.isNotNull()</strong> for null checks</li>
+                </ul>
+            </div>
+            
+            <div class="code-block">
+df.filter(F.col("score") >= 90).show()
+
+df.filter( (F.col("city")=="Delhi") & (F.col("visits") > 5) ).show()
+
+df.filter( F.col("score").isNull() ).show()
+df.filter( F.col("registered").isNotNull() ).show()
+            </div>
+            
+            <h3>B) SQL-string style (quick & readable)</h3>
+            <div class="code-block">
+df.where("score >= 90").show()
+df.where("city = 'Delhi' AND visits > 5").show()
+df.where("score IS NULL").show()
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Big exam traps:</h4>
+                <ul>
+                    <li>In expression style, never write <code>and</code>/<code>or</code>/<code>not</code> with columns. Use <code>&</code>/<code>|</code>/<code>~</code> and wrap with parentheses.</li>
+                    <li>Null checks: use <code>.isNull()</code> / <code>.isNotNull()</code> or SQL <code>IS NULL</code>. Writing <code>col == None</code> is not correct in Spark.</li>
+                </ul>
+            </div>
+            
+            <h3>Pattern filters:</h3>
+            <div class="code-block">
+df.where("city LIKE 'Del%'").show()          # LIKE with % and _
+df.where("city RLIKE '^(Del|Mum).*'").show() # RLIKE for regex
+            </div>
+        </section>
+
+        <!-- groupBy & agg -->
+        <section id="groupby-agg" class="content-section">
+            <h2>4.5 groupBy() + agg() — Group and Aggregate</h2>
+            
+            <p>Aggregators live in F (<code>avg</code>, <code>sum</code>, <code>min</code>, <code>max</code>, <code>count</code>, <code>countDistinct</code>).</p>
+            
+            <h3>Count rows per city:</h3>
+            <div class="code-block">
+df.groupBy("city").count().show()
+            </div>
+            
+            <h3>Multiple aggregations:</h3>
+            <div class="code-block">
+df.groupBy("city").agg(
+    F.count("*").alias("n_rows"),
+    F.countDistinct("id").alias("n_users"),
+    F.avg("score").alias("avg_score"),
+    F.max("visits").alias("max_visits"),
+    F.min("visits").alias("min_visits"),
+    F.sum("visits").alias("sum_visits")
+).show()
+            </div>
+            
+            <h3>Group by two columns:</h3>
+            <div class="code-block">
+df.groupBy("city", "registered").agg(F.count("*").alias("n")).show()
+            </div>
+            
+            <h3>Filtering aggregated results (like SQL HAVING)</h3>
+            <p>You filter after the aggregation:</p>
+            <div class="code-block">
+aggdf = df.groupBy("city").agg(F.count("*").alias("n"))
+aggdf.filter(F.col("n") >= 2).show()
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Exam traps:</h4>
+                <ul>
+                    <li><code>df.groupBy("city")</code> gives a GroupedData object; you must follow with <code>.count()</code> or <code>.agg(...)</code>. Writing <code>df.groupBy("city").show()</code> → error.</li>
+                    <li>Make sure to import aggregators from <code>pyspark.sql.functions</code> (that's why we use F).</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- distinct -->
+        <section id="distinct" class="content-section">
+            <h2>4.6 distinct() — Unique Values or Unique Rows</h2>
+            
+            <h3>Unique values in one column:</h3>
+            <div class="code-block">
+df.select("city").distinct().show()
+            </div>
+            
+            <h3>Unique entire rows:</h3>
+            <div class="code-block">
+df.distinct().show()
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>Exam trap (performance):</h4>
+                <p><code>df.distinct()</code> de-duplicates full rows → heavy shuffle. If you only need unique cities, do <code>df.select("city").distinct()</code> (lighter and clearer).</p>
+            </div>
+        </section>
+
+        <!-- orderBy -->
+        <section id="orderby" class="content-section">
+            <h2>4.7 orderBy() — Sort Rows</h2>
+            
+            <div class="code-block">
+df.orderBy("score").show(5)                       # ascending
+df.orderBy(F.col("score").desc()).show(5)         # descending
+df.orderBy("city", F.col("score").desc()).show()  # multi-column sort
+            </div>
+            
+            <p><strong>Tip:</strong> For top/bottom N, you'll combine <code>orderBy</code> with <code>limit</code>.</p>
+        </section>
+
+        <!-- limit -->
+        <section id="limit" class="content-section">
+            <h2>4.8 limit(n) — Take First N Rows</h2>
+            
+            <div class="code-block">
+df.limit(3).show()
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Very important:</h4>
+                <p>Without <code>orderBy</code>, the "first 3" are not guaranteed to be the same on a big cluster.</p>
+                <p><strong>Top N by a column should be:</strong></p>
+                <div class="code-block">
+df.orderBy(F.col("score").desc()).limit(3).show()
+                </div>
+                <p>(not <code>df.limit(3).orderBy(...)</code>)</p>
+            </div>
+        </section>
+
+        <!-- Filtering Anomalies -->
+        <section id="filtering-anomalies" class="content-section">
+            <h2>🔍 Filtering Anomalies with SQL</h2>
+            
+            <h3>Requirement (from syllabus):</h3>
+            <ul>
+                <li>Keep rows where sensorid starts with <code>SEN_</code></li>
+                <li>Keep rows where carid starts with <code>CAR_</code></li>
+                <li>Exclude the accidental header row (e.g., <code>sensorid != 'sensorID'</code>)</li>
+            </ul>
+            
+            <div class="code-block">
+valrecords = spark.sql("""
+  SELECT sensorid, carid, latitude, longitude, vehicle_speed, TypeOfMessage
+  FROM cars
+  WHERE sensorid LIKE 'SEN_%'
+    AND carid    LIKE 'CAR_%'
+    AND sensorid <> 'sensorID'
+""")
+
+valrecords.show(10, truncate=False)
+valrecords.printSchema()
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>VERY IMPORTANT trick (pattern semantics):</h4>
+                <ul>
+                    <li>In SQL, LIKE uses <code>%</code> = any number of chars, <code>_</code> = exactly one char.</li>
+                    <li><code>SEN_%</code> means literal <code>SEN_</code> followed by anything.</li>
+                    <li>If your real IDs are like <code>SEN12345</code> (no underscore), use <code>SEN%</code> without the underscore.</li>
+                    <li>If ID case varies (e.g., <code>sen_...</code>), wrap with <code>UPPER(sensorid) LIKE 'SEN_%'</code>.</li>
+                </ul>
+            </div>
+            
+            <h3>Optional: Strengthen validation with regex (only if needed)</h3>
+            <div class="code-block">
+# Matches 'SEN_' + digits; 'CAR_' + digits
+valrecords = spark.sql("""
+  SELECT sensorid, carid, latitude, longitude, vehicle_speed, TypeOfMessage
+  FROM cars
+  WHERE sensorid RLIKE '^SEN_[0-9]+$'
+    AND carid    RLIKE '^CAR_[0-9]+$'
+""")
+            </div>
+        </section>
+
+        <!-- Arisconn Pipeline -->
+        <section id="arisconn-pipeline" class="content-section">
+            <h2>🚀 Complete Arisconn Pipeline (Paste-and-Run)</h2>
+            
+            <div class="code-block">
+# 1) RDD
+Car_Info = sc.textFile("/user/sajal_trng/SparkFrameworkDatasets/ArisconnDataset.txt")
+header = Car_Info.first()
+body = (Car_Info
+        .filter(lambda l: l and l.strip())
+        .filter(lambda l: l != header))
+
+# 2) namedtuple + parse
+from collections import namedtuple
+Cars = namedtuple('Cars', [
+    'sensorid','carid','latitude','longitude',
+    'engine_speed','accelerator_pedal_position','vehicle_speed',
+    'torque_at_transmission','fuel_level','TypeOfMessage','timestamp'
+])
+
+def parse_line(line):
+    p = [x.strip() for x in line.split(",")]
+    if len(p) < 11:
+        return None
+    try:
+        return Cars(
+            p[0], p[1], float(p[2]), p[3], int(p[4]), int(p[5]),
+            int(p[6]), int(p[7]), float(p[8]), p[9], float(p[10])
+        )
+    except:
+        return None
+
+RDD_struct = body.map(parse_line).filter(lambda x: x is not None)
+
+# 2A) toDF (or use createDataFrame(RDD_struct))
+DF = RDD_struct.toDF()
+
+# 3) temp view
+DF.createOrReplaceTempView("cars")
+
+# 4) valid rows (per syllabus)
+valrecords = spark.sql("""
+  SELECT sensorid, carid, latitude, longitude, vehicle_speed, TypeOfMessage
+  FROM cars
+  WHERE sensorid LIKE 'SEN_%'
+    AND carid    LIKE 'CAR_%'
+    AND sensorid <> 'sensorID'
+""")
+
+# 5) examples of methods
+valrecords.printSchema()
+valrecords.show(5, truncate=False)
+
+# top 5 speeds
+from pyspark.sql.functions import col
+valrecords.orderBy(col("vehicle_speed").desc()).limit(5).show()
+            </div>
+        </section>
+
+        <!-- Exam Traps -->
+        <section id="exam-traps" class="content-section">
+            <h2>⚠️ Exam-Style Edge Cases & Traps (Memorize These)</h2>
+            
+            <div class="highlight-box error">
+                <h4>1. LIKE patterns</h4>
+                <ul>
+                    <li><code>%</code> = any number of chars; <code>_</code> = exactly one char.</li>
+                    <li>If your IDs are <code>SEN123</code> (no underscore), <code>SEN_%</code> is wrong → use <code>SEN%</code>.</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>2. Casting before cleaning</h4>
+                <ul>
+                    <li>If you cast to int/float before removing "?", you'll get exceptions.</li>
+                    <li>Either filter out bad rows first (SQL), or protect casts (try/except).</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>3. Header handling</h4>
+                <ul>
+                    <li>If you forget to remove header in RDD land, you'll parse column names as data.</li>
+                    <li>Symptom: weird values in numeric columns or "sensorID" sneaking through.</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>4. groupBy without agg</h4>
+                <p><code>df.groupBy("x")</code> is not a DataFrame; you must call <code>.count()</code>, <code>.agg(...)</code>, etc.</p>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>5. distinct scope</h4>
+                <p><code>df.distinct()</code> vs <code>df.select("col").distinct()</code> — know the difference and the shuffle cost.</p>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>6. orderBy + limit</h4>
+                <ul>
+                    <li>Correct "top N": <code>df.orderBy(desc("col")).limit(N)</code>.</li>
+                    <li>Wrong: <code>df.limit(N).orderBy(desc("col"))</code> (limits first, then sorts those few).</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>7. Temp view scope</h4>
+                <p><code>createOrReplaceTempView("cars")</code> lasts only for the current session.</p>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>8. Column name typos / case</h4>
+                <p>Python API is case-sensitive. Check <code>df.columns</code>.</p>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>9. Boolean ops in filters</h4>
+                <p>Use <code>&</code> <code>|</code> <code>~</code> with parentheses, not <code>and</code>/<code>or</code>/<code>not</code>.</p>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>10. Null checks</h4>
+                <p>Use <code>.isNull()</code> / <code>.isNotNull()</code> or SQL <code>IS NULL</code>. <code>col == None</code> doesn't work.</p>
+            </div>
+        </section>
+
+        <!-- Practice Q&A -->
+        <section id="practice-qa" class="content-section">
+            <h2>💪 Practice Q&A (With Answers)</h2>
+            
+            <div class="qa-section">
+                <h4>Q1. Difference between toDF() and spark.createDataFrame()?</h4>
+                <p><strong>A.</strong> Both create a DataFrame. <code>toDF()</code> is a convenient method on an RDD whose elements already have field structure (namedtuple/Row). <code>createDataFrame()</code> is more general and can accept RDDs, lists, Pandas DF, and an explicit schema.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q2. Why use a namedtuple before toDF()?</h4>
+                <p><strong>A.</strong> Its field names become the DataFrame's column names automatically.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q3. How to register a DataFrame so you can run SQL?</h4>
+                <p><strong>A.</strong> <code>df.createOrReplaceTempView("name")</code>, then <code>spark.sql("SELECT ... FROM name")</code>.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q4. Filter valid IDs that start with SEN_ and CAR_?</h4>
+                <p><strong>A.</strong> <code>WHERE sensorid LIKE 'SEN_%' AND carid LIKE 'CAR_%'</code>.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q5. Get unique car ids?</h4>
+                <p><strong>A.</strong> <code>df.select("carid").distinct()</code> (cheaper than <code>df.distinct().select("carid")</code>).</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q6. Top 10 by speed?</h4>
+                <p><strong>A.</strong> <code>df.orderBy(F.col("vehicle_speed").desc()).limit(10)</code>.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q7. Group by car and count rows?</h4>
+                <p><strong>A.</strong> <code>df.groupBy("carid").count()</code>.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q8. Show schema and first 5 rows (full text)?</h4>
+                <p><strong>A.</strong> <code>df.printSchema()</code> and <code>df.show(5, truncate=False)</code>.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q9. filter vs where?</h4>
+                <p><strong>A.</strong> Same operation; two names.</p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q10. Why might casting fail in the mapper?</h4>
+                <p><strong>A.</strong> Encounters "?" or non-numeric text; fix by filtering first or try/except.</p>
+            </div>
+        </section>
+
+        <!-- High-value Exam Traps -->
+        <section id="high-value-traps" class="content-section">
+            <h2>🎯 High-Value Exam Traps (Memorize)</h2>
+            
+            <div class="highlight-box error">
+                <ul>
+                    <li><strong>filter vs where</strong> → They are identical.</li>
+                    <li><strong>Boolean ops</strong> → Use <code>&</code>, <code>|</code>, <code>~</code> with parentheses. Never <code>and</code>, <code>or</code>, <code>not</code> with columns.</li>
+                    <li><strong>Null checks</strong> → Use <code>.isNull()</code> / <code>.isNotNull()</code> or SQL <code>IS NULL</code>. <code>col == None</code> is wrong.</li>
+                    <li><strong>groupBy needs agg</strong> → <code>df.groupBy("x").count()</code> (not <code>df.groupBy("x").show()</code>).</li>
+                    <li><strong>distinct scope</strong> → <code>df.select("col").distinct()</code> (column-level). <code>df.distinct()</code> dedups whole rows (heavier).</li>
+                    <li><strong>Top N</strong> → <code>orderBy(...).limit(N)</code> (not <code>limit(...).orderBy(...)</code>).</li>
+                    <li><strong>Display vs data</strong> → <code>show(truncate=...)</code> changes only printing, not the DataFrame.</li>
+                    <li><strong>Special column names</strong> → Backticks in SQL or rename once with <code>withColumnRenamed</code>.</li>
+                    <li><strong>Type mismatches</strong> → Cast before numeric comparisons/sums.</li>
+                    <li><strong>Temp views (if you use SQL)</strong> → <code>df.createOrReplaceTempView("t")</code>; views are session-scoped.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Rapid Q&A -->
+        <section id="rapid-qa" class="content-section">
+            <h2>⚡ Rapid Q&A (With Tiny Answers)</h2>
+            
+            <div class="qa-section">
+                <h4>Q: How do you select columns and rename one?</h4>
+                <p><strong>A:</strong> <code>df.select(F.col("city").alias("City"), "score").show()</code></p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q: Filter rows with score ≥ 80 and city = Delhi (expression style)?</h4>
+                <p><strong>A:</strong> <code>df.filter( (F.col("score")>=80) & (F.col("city")=="Delhi") ).show()</code></p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q: Count rows per city?</h4>
+                <p><strong>A:</strong> <code>df.groupBy("city").count().show()</code></p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q: Average score per city, only for registered users?</h4>
+                <p><strong>A:</strong> <code>df.filter(F.col("registered")==True).groupBy("city").agg(F.avg("score")).show()</code></p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q: Unique cities?</h4>
+                <p><strong>A:</strong> <code>df.select("city").distinct().show()</code></p>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q: Top 2 by visits?</h4>
+                <p><strong>A:</strong> <code>df.orderBy(F.col("visits").desc()).limit(2).show()</code></p>
+            </div>
+        </section>
+
+        <!-- Tricky Quiz -->
+        <section id="tricky-quiz" class="content-section">
+            <h2>🎯 Tricky Quiz (Answers Included)</h2>
+            
+            <div class="quiz-item">
+                <h4>1. Pattern check: Your real sensorid is SEN12345 (no underscore). Which is correct?</h4>
+                <p class="answer"><strong>Answer:</strong> <code>sensorid LIKE 'SEN%'</code> (not <code>SEN_%</code>).</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>2. You wrote DF.groupBy("carid").show(). Why does it fail?</h4>
+                <p class="answer"><strong>Answer:</strong> <code>groupBy</code> returns GroupedData; you must aggregate: <code>DF.groupBy("carid").count().show()</code>.</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>3. Two ways to get unique carid:</h4>
+                <p>(a) <code>DF.distinct().select("carid")</code></p>
+                <p>(b) <code>DF.select("carid").distinct()</code></p>
+                <p>Which is cheaper and why?</p>
+                <p class="answer"><strong>Answer:</strong> (b). It de-duplicates only one column, not whole rows → less shuffle.</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>4. Does valrecords.limit(5).orderBy("vehicle_speed") return the lowest 5 speeds?</h4>
+                <p class="answer"><strong>Answer:</strong> No. It limits first, then sorts the few rows. Correct is <code>valrecords.orderBy("vehicle_speed").limit(5)</code>.</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>5. Where do you cast to int/float if the raw data has "?" for numbers—before or after filtering?</h4>
+                <p class="answer"><strong>Answer:</strong> After filtering, or protect casts with try/except. Casting first may throw errors.</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>6. You created a temp view "cars" in one shell. In a new shell, spark.sql("select count(*) from cars") fails. Why?</h4>
+                <p class="answer"><strong>Answer:</strong> Temp views are session-scoped; you must re-register in the new session.</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>7. Show two equivalent filters for speed > 100.</h4>
+                <p class="answer"><strong>Answer:</strong></p>
+                <ul>
+                    <li>Expression: <code>df.filter(F.col("vehicle_speed") > 100)</code></li>
+                    <li>SQL string: <code>df.where("vehicle_speed > 100")</code></li>
+                </ul>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>8. Examiner asks: "Longitude is string in your DF; how do you fix it?"</h4>
+                <p class="answer"><strong>Answer:</strong> <code>df = df.withColumn("longitude", F.col("longitude").cast("double"))</code></p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>9. How to exclude a stray header row that slipped into data (sensorID literal)?</h4>
+                <p class="answer"><strong>Answer:</strong> Add <code>AND sensorid <> 'sensorID'</code> in the WHERE clause.</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>10. One SQL to: (a) keep valid SEN_% / CAR_%, (b) errors only (TypeOfMessage LIKE 'ERR%'), (c) count per car, (d) top 10.</h4>
+                <p class="answer"><strong>Answer:</strong></p>
+                <div class="code-block">
+SELECT carid, COUNT(*) AS error_count
+FROM cars
+WHERE sensorid LIKE 'SEN_%'
+  AND carid    LIKE 'CAR_%'
+  AND TypeOfMessage LIKE 'ERR%'
+  AND sensorid <> 'sensorID'
+GROUP BY carid
+ORDER BY error_count DESC
+LIMIT 10
+                </div>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>11. Boolean operators: Why does df.filter(F.col("score")>80 and F.col("visits")>5) fail? Fix it.</h4>
+                <p class="answer"><strong>Answer:</strong> Python's <code>and</code> doesn't work with column objects. Fix: <code>df.filter((F.col("score")>80) & (F.col("visits")>5))</code></p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>12. Null logic: Why does df.filter(F.col("score") == None) not return nulls?</h4>
+                <p class="answer"><strong>Answer:</strong> Null comparisons need special methods. Correct: <code>df.filter(F.col("score").isNull())</code></p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>13. Distinct: You need unique city values. Which is better and why?</h4>
+                <p>(a) <code>df.distinct().select("city")</code></p>
+                <p>(b) <code>df.select("city").distinct()</code></p>
+                <p class="answer"><strong>Answer:</strong> (b) is better. It de-duplicates only one column, not whole rows → less shuffle and better performance.</p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>14. GroupBy: Why does df.groupBy("city").show() error? Write the correct line.</h4>
+                <p class="answer"><strong>Answer:</strong> <code>groupBy()</code> returns GroupedData, not DataFrame. Correct: <code>df.groupBy("city").count().show()</code></p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>15. Top-N pattern: You wrote df.limit(5).orderBy(F.col("score").desc()).show(). Will this give top-5 by score? Fix it.</h4>
+                <p class="answer"><strong>Answer:</strong> No. It limits first, then sorts those 5 rows. Correct: <code>df.orderBy(F.col("score").desc()).limit(5).show()</code></p>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>16. String pattern: Filter cities that start with "Del". Show both expression and SQL-string styles.</h4>
+                <p class="answer"><strong>Answer:</strong></p>
+                <ul>
+                    <li>Expression: <code>df.filter(F.col("city").startswith("Del"))</code></li>
+                    <li>SQL string: <code>df.where("city LIKE 'Del%'")</code></li>
+                </ul>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>17. Type casting: visits got read as StringType. You want the top-3 by visits. Write the cast and the query.</h4>
+                <p class="answer"><strong>Answer:</strong></p>
+                <div class="code-block">
+df_casted = df.withColumn("visits", F.col("visits").cast("int"))
+df_casted.orderBy(F.col("visits").desc()).limit(3).show()
+                </div>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>18. Aggregate + filter (HAVING): Keep only cities with count ≥ 2 rows. Write it using DataFrame API only (no raw SQL).</h4>
+                <p class="answer"><strong>Answer:</strong></p>
+                <div class="code-block">
+city_counts = df.groupBy("city").agg(F.count("*").alias("n"))
+city_counts.filter(F.col("n") >= 2).show()
+                </div>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>19. Special column: Your column name is Churn(Y/N). Show one way to select it in SQL, and one way to make life easier in DataFrame API.</h4>
+                <p class="answer"><strong>Answer:</strong></p>
+                <ul>
+                    <li>SQL: <code>SELECT `Churn(Y/N)` FROM table</code></li>
+                    <li>DataFrame API: <code>df = df.withColumnRenamed("Churn(Y/N)", "ChurnYN")</code></li>
+                </ul>
+            </div>
+            
+            <div class="quiz-item">
+                <h4>20. Order stability: Without orderBy, does df.limit(3) always return the same 3 rows? Explain.</h4>
+                <p class="answer"><strong>Answer:</strong> No. Without <code>orderBy</code>, <code>limit(3)</code> returns any 3 rows in undefined order. On a distributed cluster, results may vary between runs. For consistent results, always use <code>orderBy</code> before <code>limit</code>.</p>
+            </div>
+        </section>
+
+        <!-- Quick Reference -->
+        <section class="content-section">
+            <h2>⚡ Lightning Recap (In Your Words)</h2>
+            
+            <div class="highlight-box success">
+                <ul>
+                    <li><strong>F</strong> is <code>pyspark.sql.functions</code> (short name).</li>
+                    <li><strong>lit(x)</strong> makes a constant column with value x.</li>
+                    <li>Build DFs from CSV or RDD (with namedtuple) → register a temp view for SQL.</li>
+                    <li>Core ops: <code>select</code>, <code>filter</code>/<code>where</code>, <code>groupBy</code>+<code>agg</code>, <code>distinct</code>, <code>orderBy</code>, <code>limit</code>, <code>show</code>, <code>printSchema</code>.</li>
+                    <li>Know the traps: boolean ops, null checks, groupBy needs agg, top-N pattern, distinct scope, header issues, special names.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Mini Practice -->
+        <section class="content-section">
+            <h2>🎓 Mini Practice (Generic, Fast to Run)</h2>
+            
+            <h3>Select & rename:</h3>
+            <div class="code-block">
+df.select(F.col("city").alias("City"), "score").show()
+            </div>
+            
+            <h3>Filter Delhi users with visits > 5:</h3>
+            <div class="code-block">
+df.filter( (F.col("city")=="Delhi") & (F.col("visits")>5) ).show()
+            </div>
+            
+            <h3>Average score per city (ignore null scores), sorted high → low (top 3):</h3>
+            <div class="code-block">
+(df.filter(F.col("score").isNotNull())
+   .groupBy("city")
+   .agg(F.avg("score").alias("avg_score"))
+   .orderBy(F.col("avg_score").desc())
+   .limit(3)
+   .show())
+            </div>
+            
+            <h3>Unique cities:</h3>
+            <div class="code-block">
+df.select("city").distinct().show()
+            </div>
+            
+            <h3>Add a constant column using lit:</h3>
+            <div class="code-block">
+df.withColumn("country", F.lit("IN")).show()
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="topic-navigation">
+            <a href="spark-sql-programming.html" class="nav-link">
+                <span>←</span>
+                <span>Previous: SQL Programming</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span>Home</span>
+                <span>🏠</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+                <a href="shared-variables.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Shared Variables</span>
+                </a>
+                <a href="spark-sql.html" class="nav-link">
+                    <span class="nav-icon">🗃️</span>
+                    <span class="nav-text">Spark SQL</span>
+                </a>
+                <a href="spark-sql-programming.html" class="nav-link">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">SQL Programming</span>
+                </a>
+                <a href="dataframe-operations.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">DataFrame Operations</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+        // Function to bypass password screen
+        function bypassPasswordScreen() {
+            if (passwordScreen) {
+                passwordScreen.style.display = 'none';
+            }
+            
+            // Always skip splash for returning users - go directly to main content
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Click to skip splash functionality
+        const splash = document.getElementById('welcomeSplash');
+        if (splash) {
+            splash.addEventListener('click', () => {
+                splash.classList.add('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.content-header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Troubleshooting Guide - Common Errors & Solutions</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>🔧 PySpark Troubleshooting</h2>
+                <div class="nav-divider"></div>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#dataframe-creation" class="nav-link">DataFrame Creation Errors</a></li>
+                <li><a href="#schema-errors" class="nav-link">Schema & Import Issues</a></li>
+                <li><a href="#csv-reading" class="nav-link">CSV Reading Problems</a></li>
+                <li><a href="#unpacking-operator" class="nav-link">Python Unpacking (*)</a></li>
+                <li><a href="#column-renaming" class="nav-link">Column Renaming</a></li>
+                <li><a href="#regex-patterns" class="nav-link">Regex & Case Sensitivity</a></li>
+                <li><a href="#where-clause" class="nav-link">WHERE Clause Syntax</a></li>
+                <li><a href="#groupby-errors" class="nav-link">GroupBy & Aggregations</a></li>
+                <li><a href="#sorting-errors" class="nav-link">Sorting Issues</a></li>
+                <li><a href="#tempview-errors" class="nav-link">TempView Creation</a></li>
+                <li><a href="#practice-dataset" class="nav-link">Practice Dataset</a></li>
+            </ul>
+            <div class="nav-footer">
+                <a href="index.html" class="back-link">← Back to Hub</a>
+            </div>
+        </nav>
+
+        <main class="content">
+            <div class="content-header">
+                <h1>🔧 PySpark Troubleshooting Guide</h1>
+                <p class="content-subtitle">Common errors, their causes, and solutions with practical examples</p>
+            </div>
+
+            <!-- DataFrame Creation Errors Section -->
+            <section id="dataframe-creation" class="content-section">
+                <h2>🚨 DataFrame Creation Errors</h2>
+                <div class="info-box error-box">
+                    <div class="info-icon">❌</div>
+                    <div class="info-content">
+                        <h3>TypeError: Can not infer schema for type: &lt;class 'int'&gt;</h3>
+                        <p>This error occurs when trying to create DataFrames with mismatched data structures and column specifications.</p>
+                    </div>
+                </div>
+
+                <div class="code-comparison">
+                    <div class="wrong-way">
+                        <h4>❌ Wrong Ways</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Method 1 - Simple integers to multiple columns</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># ERROR: integers can't be split into 3 columns
+res = sc.parallelize([1,2,3])
+df = res.toDF(["col1","col2","col3"])</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Method 2 - Parentheses don't make tuples</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># Still integers! Parentheses don't make tuples
+res = sc.parallelize([(1),(2),(3)])
+df = res.toDF(["col1","col2","col3"])</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Method 3 - Mismatched tuple elements</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># ERROR: 1 element ≠ 3 columns
+res = sc.parallelize([(1,),(2,),(3,)])
+df = res.toDF(["col1","col2","col3"])</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="right-way">
+                        <h4>✅ Correct Solutions</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Solution 1 - Match data structure to columns</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># 3 elements per tuple = 3 column names
+res = sc.parallelize([(1,1,1), (2,2,2), (3,3,3)])
+df = res.toDF(["col1", "col2", "col3"])
+df.show()</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Solution 2 - Single column from simple data</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># Single column name for single values
+res = sc.parallelize([1, 2, 3])
+df = res.toDF(["number"])
+df.show()</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Solution 3 - Transform data using map</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># Transform each element to match columns
+res = sc.parallelize([1, 2, 3])
+df = res.map(lambda x: (x, x, x)).toDF(["col1", "col2", "col3"])
+df.show()</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="key-rule">
+                    <h4>🔑 Key Rule</h4>
+                    <p><strong>Number of elements in each tuple = Number of column names</strong></p>
+                    <ul>
+                        <li>1 element per tuple → 1 column name</li>
+                        <li>3 elements per tuple → 3 column names</li>
+                    </ul>
+                    <div class="remember-box">
+                        <h5>Remember:</h5>
+                        <ul>
+                            <li><code>(1)</code> = just number 1</li>
+                            <li><code>(1,)</code> = tuple with 1 element</li>
+                            <li><code>(1,2,3)</code> = tuple with 3 elements</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Schema & Import Errors Section -->
+            <section id="schema-errors" class="content-section">
+                <h2>📋 Schema & Import Errors</h2>
+                
+                <div class="error-item">
+                    <h3>❌ Problem 1: StructType not defined</h3>
+                    <div class="error-details">
+                        <p><strong>Error:</strong> <code>NameError: name 'StructType' is not defined</code></p>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Solution: Import required types</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># Import all types
+from pyspark.sql.types import *
+
+# Or import specifically
+from pyspark.sql.types import (
+    StructType, StructField, StringType, IntegerType, 
+    DoubleType, BooleanType, TimestampType, ArrayType, MapType
+)</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="error-item">
+                    <h3>❌ Problem 2: ArrayType/MapType missing arguments</h3>
+                    <div class="error-details">
+                        <p><strong>Error:</strong> <code>ArrayType.__init__() missing 1 required positional argument: 'elementType'</code></p>
+                        <div class="code-comparison">
+                            <div class="wrong-way">
+                                <h4>❌ Wrong</h4>
+                                <div class="code-block">
+                                    <pre><code class="language-python"># Missing element types
+StructField("sensor_types", ArrayType(), True)
+StructField("sensor_count", MapType(), True)</code></pre>
+                                </div>
+                            </div>
+                            <div class="right-way">
+                                <h4>✅ Correct</h4>
+                                <div class="code-block">
+                                    <pre><code class="language-python"># Specify element types
+StructField("sensor_types", ArrayType(StringType()), True)
+StructField("sensor_count", MapType(StringType(), IntegerType()), True)</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="error-item">
+                    <h3>❌ Problem 3: Schema-Data mismatch</h3>
+                    <div class="error-details">
+                        <p><strong>Error:</strong> <code>ValueError: Length of object (6) does not match with length of fields (7)</code></p>
+                        <p><strong>Rule:</strong> Number of schema fields must equal number of data values</p>
+                    </div>
+                </div>
+
+                <div class="complete-example">
+                    <h4>✅ Complete Working Example</h4>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Schema with proper imports and data matching</span>
+                            <span class="code-lang">python</span>
+                        </div>
+                        <pre><code class="language-python">from pyspark.sql.types import *
+import datetime as dt
+
+schema = StructType([
+    StructField("id", IntegerType(), True),
+    StructField("name", StringType(), True),
+    StructField("tags", ArrayType(StringType()), True),
+    StructField("counts", MapType(StringType(), IntegerType()), True),
+    StructField("active", BooleanType(), True),
+    StructField("created", DateType(), True)
+])
+
+data = [(1, 'sensor1', ['type1','type2'], {'a':1,'b':2}, True, dt.date(2024,1,1))]
+df = spark.createDataFrame(data, schema)
+df.show()</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CSV Reading Problems Section -->
+            <section id="csv-reading" class="content-section">
+                <h2>📄 CSV Reading Problems</h2>
+                
+                <div class="problem-solution">
+                    <div class="problem">
+                        <h3>❌ Problem: Getting _c0, _c1, _c2 column names</h3>
+                        <p><strong>Cause:</strong> Using <code>option("header", False)</code> when CSV has headers</p>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Wrong approach</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># Results in: _c0, _c1, _c2, _c3...
+df = spark.read.option("header", False).csv("file.csv")</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="solution">
+                        <h3>✅ Solutions</h3>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Method 1: Use actual headers</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># Uses actual column names from CSV
+df = spark.read.option("header", True).csv("file.csv")</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Method 2: Manual column naming</span>
+                                <span class="code-lang">python</span>
+                            </div>
+                            <pre><code class="language-python"># If you must use header=False, rename columns
+df = spark.read.option("header", False).csv("file.csv")
+column_names = ["customer_id", "phone", "gender", "plan"]
+df = df.toDF(*column_names)  # Note the * operator!</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Python Unpacking Operator Section -->
+            <section id="unpacking-operator" class="content-section">
+                <h2>🔄 Python Unpacking Operator (*)</h2>
+                
+                <div class="concept-explanation">
+                    <h3>Why use * in toDF(*column_names)?</h3>
+                    <p>The <code>*</code> operator unpacks a list into separate arguments</p>
+
+                    <div class="code-comparison">
+                        <div class="wrong-way">
+                            <h4>❌ Without *</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">column_names = ["a", "b", "c"]
+df.toDF(column_names)  # Passes the LIST as ONE argument - WRONG!</code></pre>
+                            </div>
+                        </div>
+                        <div class="right-way">
+                            <h4>✅ With *</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">column_names = ["a", "b", "c"]
+df.toDF(*column_names)  # Unpacks to: df.toDF("a", "b", "c") - CORRECT!</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="equivalents">
+                        <h4>These are equivalent:</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">column_names = ["customer_id", "phone", "gender"]
+
+# These are the same:
+df.toDF(*column_names)                           # Using unpacking
+df.toDF("customer_id", "phone", "gender")        # Manual arguments</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="remember-box">
+                        <p><strong>Remember:</strong> toDF() expects individual string arguments, not a list!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Column Renaming Section -->
+            <section id="column-renaming" class="content-section">
+                <h2>🏷️ Column Renaming with withColumnRenamed</h2>
+                
+                <div class="basic-syntax">
+                    <h3>Basic Syntax</h3>
+                    <div class="code-block">
+                        <pre><code class="language-python">df.withColumnRenamed("old_column_name", "new_column_name")</code></pre>
+                    </div>
+                </div>
+
+                <div class="examples-grid">
+                    <div class="example-item">
+                        <h4>Simple Example</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">df = spark.createDataFrame([("John", 25, "NYC")], ["name", "age", "city"])
+df_renamed = df.withColumnRenamed("name", "full_name")
+df_renamed.show()</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <h4>Multiple Column Renaming</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">df_renamed = df.withColumnRenamed("name", "full_name") \
+               .withColumnRenamed("age", "years_old") \
+               .withColumnRenamed("city", "location")</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <h4>CSV Column Renaming</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">df = spark.read.option("header", True).csv("file.csv")
+df_clean = df.withColumnRenamed("_c0", "customer_id") \
+             .withColumnRenamed("_c1", "phone_number")</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <h4>Alternative for Multiple Renames</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">current_columns = df.columns
+new_columns = ['full_name', 'years_old', 'location']
+df_renamed = df.toDF(*new_columns)</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="important-notes">
+                    <h4>Important Notes</h4>
+                    <ul>
+                        <li>Returns NEW DataFrame (doesn't modify original)</li>
+                        <li>Column names are case sensitive</li>
+                        <li>Old column must exist or you get an error</li>
+                        <li>Can chain multiple renames</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Regex Patterns Section -->
+            <section id="regex-patterns" class="content-section">
+                <h2>🔍 Regex Patterns & Case Sensitivity</h2>
+                
+                <div class="problem-solution">
+                    <div class="problem">
+                        <h3>❌ Problem: Case-sensitive regex matching</h3>
+                        <div class="code-block">
+                            <pre><code class="language-python"># Only matches lowercase 'j' - Won't match 'John' (capital J)
+spark.sql("select * from tb where name rlike '^j'").show()</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="solutions-grid">
+                        <div class="solution-item">
+                            <h4>Method 1: Correct case</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">spark.sql("select * from tb where name rlike '^J'").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="solution-item">
+                            <h4>Method 2: Case-insensitive flag</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">spark.sql("select * from tb where name rlike '(?i)^j'").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="solution-item">
+                            <h4>Method 3: Character classes</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">spark.sql("select * from tb where name rlike '^[jJ]'").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="solution-item">
+                            <h4>Method 4: Convert case first</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">spark.sql("select * from tb where lower(name) rlike '^j'").show()
+spark.sql("select * from tb where upper(name) rlike '^J'").show()</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="understanding-flags">
+                    <h3>Understanding (?i) Flag</h3>
+                    <p><code>(?i)</code> = Case-insensitive flag for entire pattern</p>
+                    
+                    <div class="examples-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pattern</th>
+                                    <th>Matches</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>'(?i)john'</code></td>
+                                    <td>john, John, JOHN, JoHn, etc.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>'(?i)^j'</code></td>
+                                    <td>Anything starting with j/J (any case)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>'(?i)alice'</code></td>
+                                    <td>alice, Alice, ALICE, AlIcE, etc.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="other-flags">
+                        <h4>Other Regex Flags</h4>
+                        <ul>
+                            <li><code>(?i)</code> = Case-insensitive</li>
+                            <li><code>(?m)</code> = Multiline mode</li>
+                            <li><code>(?s)</code> = Dot matches newlines</li>
+                            <li><code>(?x)</code> = Extended mode (ignore whitespace)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- WHERE Clause Syntax Section -->
+            <section id="where-clause" class="content-section">
+                <h2>🔍 WHERE Clause Syntax Errors</h2>
+                
+                <div class="common-error">
+                    <h3>❌ Common Error: Wrong syntax</h3>
+                    <p><strong>Error:</strong> <code>'>' not supported between instances of 'str' and 'int'</code></p>
+                    <p><strong>Cause:</strong> Comparing string "sale_id" with int 5</p>
+                    
+                    <div class="code-block error-code">
+                        <pre><code class="language-python"># WRONG - This causes the error
+sales.where("sale_id">5).show()</code></pre>
+                    </div>
+                </div>
+
+                <div class="correct-ways">
+                    <h3>✅ Correct Ways</h3>
+                    
+                    <div class="methods-grid">
+                        <div class="method-item">
+                            <h4>Method 1: Entire condition in quotes</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">sales.where("sale_id > 5").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="method-item">
+                            <h4>Method 2: Column expressions</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">sales.where(col("sale_id") > 5).show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="method-item">
+                            <h4>Method 3: DataFrame column reference</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">sales.where(sales.sale_id > 5).show()</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="multiple-conditions">
+                    <h3>Multiple Conditions</h3>
+                    
+                    <div class="code-comparison">
+                        <div class="sql-style">
+                            <h4>SQL-style (Recommended)</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">sales.where("sale_id > 5 AND price < 1000").show()
+sales.where("category = 'Electronics' OR category = 'Books'").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="column-expression-style">
+                            <h4>Column expression style</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">sales.where((col("price") > 800) & (col("quantity") < 5)).show()</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="condition-examples">
+                    <h3>String Condition Examples</h3>
+                    <div class="code-block">
+                        <pre><code class="language-python">sales.where("price > 1000").show()
+sales.where("category = 'Electronics'").show()
+sales.where("salesperson LIKE '%John%'").show()
+sales.where("sale_date >= '2023-03-01'").show()</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GroupBy Errors Section -->
+            <section id="groupby-errors" class="content-section">
+                <h2>📊 GroupBy Errors & Aggregations</h2>
+                
+                <div class="common-error">
+                    <h3>❌ Common Error: GroupedData has no show()</h3>
+                    <p><strong>Error:</strong> <code>AttributeError: 'GroupedData' object has no attribute 'show'</code></p>
+                    <p><strong>Cause:</strong> GroupedData objects need aggregation functions</p>
+                    
+                    <div class="code-block error-code">
+                        <pre><code class="language-python"># WRONG - GroupedData has no show() method
+sales.groupBy("category").show()</code></pre>
+                    </div>
+                </div>
+
+                <div class="correct-approach">
+                    <h3>✅ Correct: Add aggregation functions</h3>
+                    <div class="code-block">
+                        <pre><code class="language-python">sales.groupBy("category").count().show()
+sales.groupBy("category").sum("quantity").show()
+sales.groupBy("category").avg("price").show()</code></pre>
+                    </div>
+                </div>
+
+                <div class="aggregation-functions">
+                    <h3>Common Aggregation Functions</h3>
+                    <div class="functions-grid">
+                        <div class="function-item">
+                            <code>.count()</code>
+                            <span>Count records</span>
+                        </div>
+                        <div class="function-item">
+                            <code>.sum("column")</code>
+                            <span>Sum values</span>
+                        </div>
+                        <div class="function-item">
+                            <code>.avg("column")</code>
+                            <span>Average values</span>
+                        </div>
+                        <div class="function-item">
+                            <code>.max("column")</code>
+                            <span>Maximum value</span>
+                        </div>
+                        <div class="function-item">
+                            <code>.min("column")</code>
+                            <span>Minimum value</span>
+                        </div>
+                        <div class="function-item">
+                            <code>.first("column")</code>
+                            <span>First value</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="multiple-aggregations">
+                    <h3>Multiple Aggregations</h3>
+                    <div class="code-block">
+                        <pre><code class="language-python">sales.groupBy("category").agg(
+    count("*").alias("total_sales"),
+    sum("quantity").alias("total_items"),
+    avg("price").alias("avg_price"),
+    max("price").alias("max_price")
+).show()</code></pre>
+                    </div>
+                </div>
+
+                <div class="groupby-examples">
+                    <h3>GroupBy Examples</h3>
+                    <div class="examples-grid">
+                        <div class="example-item">
+                            <h4>GroupBy with Where</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">sales.where("sale_id > 5").groupBy("category").count().show()
+sales.filter(col("price") > 1000).groupBy("category").sum("quantity").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="example-item">
+                            <h4>Multiple Column GroupBy</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">sales.groupBy("category", "salesperson").count().show()
+sales.groupBy("category", "salesperson").avg("price").show()</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sorting Errors Section -->
+            <section id="sorting-errors" class="content-section">
+                <h2>🔄 Sorting Issues with sortByKey vs sortBy</h2>
+                
+                <div class="api-explanation">
+                    <h3>Understanding sortByKey API</h3>
+                    <p><code>sortByKey</code> sorts by the existing key of a pair RDD (key, value).</p>
+                    <p><strong>Signature:</strong> <code>sortByKey(ascending=True, numPartitions=None, keyfunc=lambda k: k)</code></p>
+                </div>
+
+                <div class="what-went-wrong">
+                    <h3>❌ What went wrong</h3>
+                    
+                    <div class="error-item">
+                        <h4>TypeError: unexpected keyword argument 'key'</h4>
+                        <p>You used <code>key=...</code> (like Python's sorted). The kwarg is <code>keyfunc</code>, not <code>key</code>.</p>
+                    </div>
+
+                    <div class="error-item">
+                        <h4>Function passed as first argument</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">r.sortByKey(lambda x: x[0])  # WRONG</code></pre>
+                        </div>
+                        <p>The first positional arg is <code>ascending</code> (a bool). You passed a function there, which is truthy ⇒ treated as <code>ascending=True</code>. Your function was ignored.</p>
+                    </div>
+
+                    <div class="error-item">
+                        <h4>sortByKey can't look at values</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">r.sortByKey(lambda x: x[1])  # WRONG</code></pre>
+                        </div>
+                        <p>sortByKey can only look at the key, not the value.</p>
+                    </div>
+                </div>
+
+                <div class="correct-solutions">
+                    <h3>✅ Do it correctly</h3>
+                    
+                    <div class="solutions-grid">
+                        <div class="solution-item">
+                            <h4>Sort by length of the key</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">r.sortByKey(keyfunc=lambda k: len(k)).collect()
+# or simply use sortBy over the whole item:
+r.sortBy(lambda kv: len(kv[0])).collect()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="solution-item">
+                            <h4>Sort by the value</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">r.sortBy(lambda kv: kv[1]).collect()
+# (sortByKey can't look at the value directly)</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="solution-item">
+                            <h4>Sort by (len(key), then value)</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">r.sortBy(lambda kv: (len(kv[0]), kv[1])).collect()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="solution-item">
+                            <h4>Descending order</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">r.sortBy(lambda kv: len(kv[0]), ascending=False).collect()
+# or
+r.sortByKey(ascending=False, keyfunc=lambda k: len(k))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rule-of-thumb">
+                    <h3>🎯 Rule of thumb</h3>
+                    <div class="rules-grid">
+                        <div class="rule-item">
+                            <h4>Use sortBy</h4>
+                            <p>When you want to sort by any function of (key, value).</p>
+                        </div>
+                        <div class="rule-item">
+                            <h4>Use sortByKey</h4>
+                            <p>When you want to sort by the key (optionally transformed via keyfunc=).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TempView Errors Section -->
+            <section id="tempview-errors" class="content-section">
+                <h2>🗂️ TempView Creation Errors</h2>
+                
+                <div class="error-explanation">
+                    <h3>❌ Error: Missing required argument</h3>
+                    <p><strong>Error:</strong> <code>DataFrame.createOrReplaceTempView() missing 1 required positional argument: 'name'</code></p>
+                    <p><strong>Cause:</strong> Missing table name argument</p>
+                    
+                    <div class="code-block error-code">
+                        <pre><code class="language-python"># WRONG - Missing table name
+df.createOrReplaceTempView()</code></pre>
+                    </div>
+                </div>
+
+                <div class="correct-usage">
+                    <h3>✅ Correct Usage</h3>
+                    <div class="code-block">
+                        <pre><code class="language-python">df.createOrReplaceTempView("table_name")</code></pre>
+                    </div>
+
+                    <div class="usage-examples">
+                        <h4>Usage Examples</h4>
+                        <div class="code-block">
+                            <pre><code class="language-python">employees.createOrReplaceTempView("emp")
+sales.createOrReplaceTempView("sales_data")
+
+# Then use in SQL:
+spark.sql("SELECT * FROM emp WHERE salary > 70000").show()
+spark.sql("SELECT category, COUNT(*) FROM sales_data GROUP BY category").show()</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Practice Dataset Section -->
+            <section id="practice-dataset" class="content-section">
+                <h2>🎯 Practice Dataset Reference</h2>
+                
+                <div class="datasets-grid">
+                    <div class="dataset-item">
+                        <h3>👥 Employee Dataset</h3>
+                        <div class="dataset-info">
+                            <h4>Columns:</h4>
+                            <p>id, name, department, salary, age, hire_date, gender</p>
+                            <h4>Departments:</h4>
+                            <p>Engineering, Marketing, HR, Finance</p>
+                        </div>
+                    </div>
+
+                    <div class="dataset-item">
+                        <h3>💰 Sales Dataset</h3>
+                        <div class="dataset-info">
+                            <h4>Columns:</h4>
+                            <p>sale_id, product, category, price, quantity, sale_date, salesperson</p>
+                            <h4>Categories:</h4>
+                            <p>Electronics, Clothing, Books, Home</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="practice-commands">
+                    <h3>Practice Commands</h3>
+                    
+                    <div class="command-sections">
+                        <div class="command-section">
+                            <h4>Basic Operations</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">employees.select("name", "department", "salary").show()
+employees.filter("salary > 70000").show()
+employees.where("age < 30").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="command-section">
+                            <h4>Aggregations</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">employees.groupBy("department").count().show()
+employees.groupBy("department").avg("salary").show()
+sales.groupBy("category").sum("quantity").show()</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="command-section">
+                            <h4>String Operations</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">employees.filter("name LIKE 'A%'").show()  # Names starting with A
+employees.filter("name RLIKE '^[JA]'").show()  # Names starting with J or A</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="command-section">
+                            <h4>Multiple Conditions</h4>
+                            <div class="code-block">
+                                <pre><code class="language-python">employees.filter("department = 'Engineering' AND salary > 75000").show()
+sales.where("category IN ('Electronics', 'Books')").show()</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="final-reminder">
+                    <h3>🎯 Remember</h3>
+                    <p><strong>Always use proper syntax and match DataFrame columns with conditions!</strong></p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Highlight active section in navigation
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.content-section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            let currentSection = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                const sectionHeight = section.offsetHeight;
+                if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').substring(1) === currentSection) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

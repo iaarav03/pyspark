@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark SQL Programming & DataFrames - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="content-header">
+        <div class="content-title">
+            <h1>🔧 PySpark SQL Programming & DataFrames</h1>
+            <p>Master SQL contexts, SparkSession, DataFrame creation, and structured data processing with detailed examples</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="#spark-sql-programming">SQL Programming</a>
+        </div>
+    </header>
+
+    <main class="content-body">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#sql-entry-points">SQL Entry Points Overview</a></li>
+                <li><a href="#sqlcontext">SQLContext - Basic SQL Entry</a></li>
+                <li><a href="#hivecontext">HiveContext - SQL with Hive Support</a></li>
+                <li><a href="#sparksession">SparkSession - Modern Unified Entry</a></li>
+                <li><a href="#sparkcontext-explained">Understanding SparkContext (sc)</a></li>
+                <li><a href="#dataframe-creation">Creating DataFrames in SparkSession</a></li>
+                <li><a href="#truncate-explained">Understanding truncate in show()</a></li>
+                <li><a href="#dataframe-concepts">DataFrame Programming Components</a></li>
+                <li><a href="#rdd-to-dataframe">Building DataFrame from RDD with namedtuple</a></li>
+                <li><a href="#arisconn-requirements">Implementing Arisconn's Analysis Requirements</a></li>
+                <li><a href="#common-issues">Common Issues & Solutions</a></li>
+            </ul>
+        </div>
+
+        <!-- SQL Entry Points Overview -->
+        <section id="sql-entry-points" class="content-section">
+            <h2>🚪 SQL Entry Points - The Big Idea</h2>
+            
+            <div class="highlight-box success">
+                <h4>One Line Summary</h4>
+                <p>Just like SparkContext is the entry for Spark Core, these are the entries for Spark SQL:</p>
+                <ul>
+                    <li><strong>SQLContext</strong></li>
+                    <li><strong>HiveContext</strong></li>
+                    <li><strong>SparkSession</strong> (new, unified)</li>
+                </ul>
+                <p>You only need one to run SQL/DataFrame work. In modern Spark, we usually use SparkSession.</p>
+            </div>
+        </section>
+
+        <!-- SQLContext -->
+        <section id="sqlcontext" class="content-section">
+            <h2>A) SQLContext</h2>
+            
+            <h3>What it is:</h3>
+            <ul>
+                <li>Entry to Spark SQL features (DataFrames + SQL)</li>
+                <li>Built on top of an existing SparkContext (sc)</li>
+            </ul>
+            
+            <h3>Create it:</h3>
+            <div class="code-block">
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)   # sc must already exist
+            </div>
+            
+            <h3>Use it to read a CSV into a DataFrame:</h3>
+            <div class="code-block">
+df = (sqlContext.read
+      .option("header", True)      # first row has column names
+      .option("inferSchema", True) # let Spark guess types (ok for demo)
+      .csv("/data/TelecomData.csv"))
+
+df.show(5, truncate=False)
+df.printSchema()
+            </div>
+            
+            <h3>Run a SQL query:</h3>
+            <div class="code-block">
+df.createOrReplaceTempView("telecom")        # make a temporary table
+sqlContext.sql("SELECT Mode, COUNT(*) c FROM telecom GROUP BY Mode").show()
+            </div>
+        </section>
+
+        <!-- HiveContext -->
+        <section id="hivecontext" class="content-section">
+            <h2>B) HiveContext</h2>
+            
+            <h3>What it is:</h3>
+            <ul>
+                <li>Everything in SQLContext, plus Hive features (query Hive tables)</li>
+                <li>Also built on top of SparkContext</li>
+            </ul>
+            
+            <h3>Create it:</h3>
+            <div class="code-block">
+from pyspark.sql import HiveContext
+hiveContext = HiveContext(sc)
+            </div>
+            
+            <h3>Use it exactly like SQLContext for DataFrames:</h3>
+            <div class="code-block">
+df = (hiveContext.read
+      .option("header", True)
+      .option("inferSchema", True)
+      .csv("/data/TelecomData.csv"))
+
+df.createOrReplaceTempView("telecom")
+hiveContext.sql("SELECT InternetStatus, COUNT(*) c FROM telecom GROUP BY InternetStatus").show()
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Note (simple):</h4>
+                <p>Querying Hive tables also works if your environment has Hive/metastore configured. If not, you can still use HiveContext for normal DataFrame + SQL like above.</p>
+            </div>
+        </section>
+
+        <!-- SparkSession -->
+        <section id="sparksession" class="content-section">
+            <h2>C) SparkSession (Recommended, Unified)</h2>
+            
+            <h3>What it is:</h3>
+            <ul>
+                <li>One object that replaces SparkContext + SQLContext + HiveContext</li>
+                <li>Introduced in Spark 2.0</li>
+                <li>In the PySpark shell, you already have <code>spark</code> (a SparkSession) and <code>sc</code></li>
+            </ul>
+            
+            <h3>In shell (nothing to create): just use spark:</h3>
+            <div class="code-block">
+df = (spark.read
+      .option("header", True)
+      .option("inferSchema", True)
+      .csv("/data/TelecomData.csv"))
+
+df.createOrReplaceTempView("telecom")
+spark.sql("SELECT Gender, COUNT(*) c FROM telecom GROUP BY Gender").show()
+            </div>
+            
+            <h3>In a Python script (create one):</h3>
+            <div class="code-block">
+from pyspark.sql import SparkSession
+
+spark = (SparkSession.builder
+         .appName("demo")
+         .master("local[1]")
+         .config("spark.some.config.option", "some-value")
+         .enableHiveSupport()     # optional; only if you need Hive features
+         .getOrCreate())
+
+sc = spark.sparkContext          # SparkContext comes from the session
+            </div>
+            
+            <p>That's it. With <code>spark</code>, you can do everything we did with SQLContext/HiveContext.</p>
+        </section>
+
+        <!-- Handling Tricky Column Names -->
+        <section class="content-section">
+            <h2>💡 Small But Important Tip (Your CSV Has Tricky Column Names)</h2>
+            
+            <p>Your file has columns like <code>Senior(Y/N)</code> and <code>Churn(Y/N)</code>.</p>
+            <p>In SQL, such names need backticks OR you can rename once to safe names.</p>
+            
+            <h3>Option 1: Backticks in SQL</h3>
+            <div class="code-block">
+spark.sql("SELECT `Senior(Y/N)`, `Churn(Y/N)` FROM telecom LIMIT 5").show()
+            </div>
+            
+            <h3>Option 2: Rename once (easier later)</h3>
+            <div class="code-block">
+from pyspark.sql.functions import col
+
+df2 = (df
+    .withColumnRenamed("Senior(Y/N)", "SeniorYN")
+    .withColumnRenamed("Churn(Y/N)",  "ChurnYN"))
+df2.createOrReplaceTempView("telecom2")
+spark.sql("SELECT SeniorYN, ChurnYN FROM telecom2 LIMIT 5").show()
+            </div>
+        </section>
+
+        <!-- Put It Together -->
+        <section class="content-section">
+            <h2>🔄 Put It Together (Copy-Paste Demo)</h2>
+            
+            <p>Use one of the three entries (I'll show SparkSession since it's the modern one). In the PySpark shell, spark already exists.</p>
+            
+            <div class="code-block">
+# 1) Read CSV as DataFrame
+df = (spark.read
+      .option("header", True)
+      .option("inferSchema", True)
+      .csv("/data/TelecomData.csv"))
+
+# 2) (Optional) rename tricky columns
+df = (df
+      .withColumnRenamed("Senior(Y/N)", "SeniorYN")
+      .withColumnRenamed("Churn(Y/N)",  "ChurnYN"))
+
+# 3) Make a temp view to run SQL
+df.createOrReplaceTempView("telecom")
+
+# 4) Run 2 tiny queries
+spark.sql("SELECT COUNT(*) AS rows FROM telecom").show()
+
+spark.sql("""
+  SELECT Mode, COUNT(*) AS c
+  FROM telecom
+  GROUP BY Mode
+  ORDER BY c DESC
+""").show()
+            </div>
+            
+            <p>If you want to try the same with SQLContext, swap <code>spark</code> with <code>sqlContext</code>.</p>
+            <p>With HiveContext, swap <code>spark</code> with <code>hiveContext</code>.</p>
+        </section>
+
+        <!-- Understanding SparkContext -->
+        <section id="sparkcontext-explained" class="content-section">
+            <h2>🤔 What is SparkContext (sc)?</h2>
+            
+            <div class="highlight-box success">
+                <h4>Great question — sc is just the variable name that holds your SparkContext.</h4>
+            </div>
+            
+            <h3>What is SparkContext (and why do we need sc)?</h3>
+            <ul>
+                <li><strong>SparkContext</strong> = the main "handle" to Spark Core.</li>
+                <li>It connects your driver program to the cluster (or your local machine) and manages jobs, RDDs, executors, etc.</li>
+                <li>By convention we store it in a variable called <code>sc</code>.</li>
+            </ul>
+            
+            <h3>Where does sc come from?</h3>
+            
+            <h4>In the PySpark shell (what you're using in Docker):</h4>
+            <p><code>sc</code> is created for you automatically. You can use it right away.</p>
+            
+            <h4>In a Python script / IDE:</h4>
+            <p>You usually create a SparkSession and then get the SparkContext from it:</p>
+            
+            <div class="code-block">
+from pyspark.sql import SparkSession
+spark = (SparkSession.builder
+         .appName("demo")
+         .master("local[*]")
+         .getOrCreate())
+sc = spark.sparkContext   # <-- this is the 'sc' used by SQLContext/HiveContext
+            </div>
+            
+            <h3>How sc relates to SQLContext/HiveContext/SparkSession</h3>
+            <ul>
+                <li><strong>SQLContext</strong> (<code>sqlContext = SQLContext(sc)</code>) and <strong>HiveContext</strong> (<code>HiveContext(sc)</code>) are built on top of an existing SparkContext (sc).</li>
+                <li><strong>SparkSession</strong> is the modern unified entry point (it internally has a SparkContext you can access via <code>spark.sparkContext</code>).</li>
+            </ul>
+            
+            <h3>Tiny checks you can run:</h3>
+            <div class="code-block">
+# Check that sc exists and see basic info
+print(sc)             # SparkContext
+print(sc.master)      # e.g. "local[*]" or your cluster URL
+print(sc.appName)     # application name
+
+# Create SQLContext using sc (older style, still works)
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)
+
+# Quick proof it works: make a tiny DataFrame and show it
+df = sqlContext.createDataFrame([(1,"A"), (2,"B")], ["id","val"])
+df.show()
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>Gotcha:</h4>
+                <p>Only one SparkContext can run in a JVM. If you try to make another with <code>SparkContext(...)</code> you may see: "Only one SparkContext may be running…". Use <code>spark.sparkContext</code> or <code>SparkContext.getOrCreate(...)</code> instead.</p>
+            </div>
+            
+            <p><strong>Bottom line:</strong> <code>sc</code> = your SparkContext object. In the shell it's already there; in scripts you get it from a SparkSession and then you can create <code>SQLContext(sc)</code> or just use <code>spark</code> directly (recommended in modern Spark).</p>
+        </section>
+
+        <!-- Creating DataFrames -->
+        <section id="dataframe-creation" class="content-section">
+            <h2>📊 How to Create DataFrames in SparkSession</h2>
+            
+            <h3>First: Do you have a SparkSession?</h3>
+            <ul>
+                <li>In the PySpark shell, the variable <code>spark</code> already exists.</li>
+                <li>In a Python script, make it like this:</li>
+            </ul>
+            
+            <div class="code-block">
+from pyspark.sql import SparkSession
+
+spark = (SparkSession.builder
+         .appName("demo")
+         .master("local[*]")      # run locally; ignore on a real cluster
+         .getOrCreate())
+            </div>
+            
+            <div class="highlight-box">
+                <h4>What is SparkSession?</h4>
+                <p>It's the modern "entry point" for Spark SQL. You use <code>spark</code> to read files and create DataFrames.</p>
+            </div>
+            
+            <h3>Method 1 — Create a DataFrame from a CSV file (TelecomData.csv)</h3>
+            
+            <h4>1A) If your file has a real header row</h4>
+            <div class="code-block">
+df = (spark.read
+      .option("header", True)       # first row are column names
+      .option("inferSchema", True)  # let Spark guess types (ok for demo)
+      .csv("/data/TelecomData.csv"))
+
+# Your CSV has tricky names like Senior(Y/N), Churn(Y/N). Rename once:
+df = (df
+      .withColumnRenamed("Senior(Y/N)", "SeniorYN")
+      .withColumnRenamed("Churn(Y/N)",  "ChurnYN"))
+
+df.show(5, truncate=False)  # see a few rows
+df.printSchema()            # see column data types
+            </div>
+            
+            <div class="highlight-box">
+                <h4>What these do (simple words):</h4>
+                <ul>
+                    <li><strong>spark.read:</strong> the reader object.</li>
+                    <li><strong>.option("header", True):</strong> treat the first line as column names.</li>
+                    <li><strong>.option("inferSchema", True):</strong> Spark tries to guess column types.</li>
+                    <li><strong>.csv(path):</strong> read a CSV file at that path.</li>
+                    <li><strong>.withColumnRenamed(old, new):</strong> change the column name.</li>
+                    <li><strong>show(n, truncate=False):</strong> print n rows (don't cut text).</li>
+                    <li><strong>printSchema():</strong> print the schema (column names + types).</li>
+                </ul>
+            </div>
+            
+            <p>If you want to run SQL later:</p>
+            <div class="code-block">
+df.createOrReplaceTempView("telecom")
+spark.sql("SELECT Mode, COUNT(*) c FROM telecom GROUP BY Mode").show()
+            </div>
+            
+            <h4>1B) If your file does NOT have a header row</h4>
+            <p>If you see weird column names like TXCUST00001 or Male (those are data values), then your file has no header. Do this:</p>
+            
+            <div class="code-block">
+df = (spark.read
+      .option("header", False)      # no header in file
+      .option("inferSchema", True)
+      .csv("/data/TelecomData.csv"))
+
+# Give the correct column names in order:
+df = df.toDF("CustomerID","Mobile","Gender","SeniorYN",
+             "Mode","Calls","SMS","InternetStatus","MonthlyCharges","ChurnYN")
+
+df.show(5, truncate=False)
+df.printSchema()
+            </div>
+            
+            <div class="highlight-box">
+                <h4>What .toDF(...) does:</h4>
+                <p>It replaces the current column names with the ones you pass (same count as columns).</p>
+            </div>
+            
+            <h3>Method 2 — Create a DataFrame from Python data (small in-memory list)</h3>
+            <p>Good for tiny tests.</p>
+            
+            <div class="code-block">
+data = [
+    ("TXCUST00001", "982120000", "MALE", "Y", "POSTPAID", 20, 5, "ACTIVE", 49.99, "N"),
+    ("TXCUST00002", "982120001", "FEMALE", "N", "PREPAID", 12, 2, "INACTIVE", 19.50, "Y"),
+]
+
+cols = ["CustomerID","Mobile","Gender","SeniorYN","Mode",
+        "Calls","SMS","InternetStatus","MonthlyCharges","ChurnYN"]
+
+df_small = spark.createDataFrame(data, schema=cols)
+
+df_small.show(truncate=False)
+df_small.printSchema()
+            </div>
+            
+            <div class="highlight-box">
+                <h4>What spark.createDataFrame does:</h4>
+                <p>It builds a DataFrame from Python data (list of tuples) and column names you pass.</p>
+            </div>
+            
+            <h3>Method 3 — Create a DataFrame from an RDD</h3>
+            <p>Sometimes you start with an RDD and want a DataFrame.</p>
+            
+            <div class="code-block">
+rdd = spark.sparkContext.parallelize([
+    ("TXCUST00001", "982120000", "MALE"),
+    ("TXCUST00002", "982120001", "FEMALE"),
+])
+
+df_from_rdd = rdd.toDF(["CustomerID","Mobile","Gender"])
+df_from_rdd.show()
+            </div>
+            
+            <div class="highlight-box">
+                <h4>What these do:</h4>
+                <ul>
+                    <li><strong>.parallelize:</strong> Makes an RDD from a Python list (tiny demo).</li>
+                    <li><strong>.toDF([...]):</strong> converts RDD to DataFrame with those column names.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Understanding truncate -->
+        <section id="truncate-explained" class="content-section">
+            <h2>✂️ What Does truncate Mean in show()?</h2>
+            
+            <p>Great question! In our code, <code>truncate</code> is an option of <code>DataFrame.show(...)</code>.</p>
+            <p><strong>It only controls how much text is printed to your screen. It does not change your data.</strong></p>
+            
+            <h3>Signature (simplified):</h3>
+            <div class="code-block">
+df.show(n=20, truncate=True, vertical=False)
+            </div>
+            
+            <ul>
+                <li><strong>truncate=True (default):</strong> if a cell's text is long, Spark cuts it to 20 characters and adds ...</li>
+                <li><strong>truncate=False:</strong> print the full text in each cell (may wrap across lines)</li>
+                <li><strong>truncate=&lt;number&gt;:</strong> cut to that many characters instead of 20 (e.g., truncate=50)</li>
+            </ul>
+            
+            <h3>Tiny example you can run:</h3>
+            <div class="code-block">
+from pyspark.sql import SparkSession
+spark = spark if 'spark' in globals() else SparkSession.builder.getOrCreate()
+
+data = [("C1", "This is a very very long description about something"),
+        ("C2", "Short text")]
+df = spark.createDataFrame(data, ["id", "desc"])
+
+print("\n-- default (truncate=True → 20 chars) --")
+df.show(truncate=True)
+
+print("\n-- no truncation (truncate=False) --")
+df.show(truncate=False)
+
+print("\n-- custom width (truncate=10) --")
+df.show(truncate=10)
+            </div>
+            
+            <h3>What you'll see (conceptually):</h3>
+            <ul>
+                <li><strong>truncate=True</strong> → This is a very ver...</li>
+                <li><strong>truncate=False</strong> → full sentence</li>
+                <li><strong>truncate=10</strong> → This is a ...</li>
+            </ul>
+            
+            <h3>Bonus: vertical view (helpful for many columns)</h3>
+            <p><code>vertical=True</code> prints one row per block, with each column on its own line:</p>
+            <div class="code-block">
+df.show(truncate=False, vertical=True)
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>Important notes:</h4>
+                <ul>
+                    <li>truncate affects only the printed output of show().</li>
+                    <li>Your DataFrame in memory doesn't change.</li>
+                    <li>Use truncate=False when you need to see the whole value (e.g., to debug).</li>
+                    <li>If your console is narrow, long lines may still wrap even with truncate=False.</li>
+                </ul>
+                <p><strong>⚠️ Separate thing in SQL land:</strong> TRUNCATE TABLE (a DDL command) means "remove all rows from a table." That's not what show(..., truncate=...) is. Here we're only talking about display trimming in PySpark's show().</p>
+            </div>
+        </section>
+
+        <!-- DataFrame Programming Components -->
+        <section id="dataframe-concepts" class="content-section">
+            <h2>📚 Spark SQL Programming Components</h2>
+            
+            <div class="highlight-box success">
+                <p>The first step in data processing using Spark SQL is to load a Spark RDD into DataFrame.</p>
+                <p>DataFrame is a special API class of Spark SQL, termed Spark SQL's programmatic components.</p>
+                <p>DataFrame help to load a Spark RDD, provide a schema to it with the help of namedtuple, then register it as a table and further execute Spark SQL queries against the table.</p>
+            </div>
+            
+            <h3>Important Points on DataFrame:</h3>
+            <ul>
+                <li>DataFrame is a distributed collection of data organized into named columns</li>
+                <li>DataFrame is introduced in version 1.3</li>
+                <li>DataFrame has limited support for lambda expressions</li>
+                <li>DataFrame API available for Python, Scala, Java, and R</li>
+                <li>DataFrame can be constructed from existing RDDs, Hive tables and data files</li>
+                <li>DataFrames allow working with structured data</li>
+                <li>As Python supports only DataFrame, in this course, we will implement demos using DataFrame</li>
+            </ul>
+            
+            <h3>DataFrame — What It Is (In Your Words)</h3>
+            <ul>
+                <li>A DataFrame is a <strong>distributed table</strong>: rows + named columns (schema).</li>
+                <li>Introduced in Spark 1.3.</li>
+                <li>Available in Python/Scala/Java/R.</li>
+                <li>You can build one from RDDs, Hive tables, or data files.</li>
+                <li>In Python we use DataFrame (Python doesn't have the typed "Dataset" API).</li>
+                <li>DataFrame has limited lambda support: instead of Python <code>lambda row: ...</code>, you normally use column expressions (e.g., <code>col("x") > 0</code>, <code>when(...)</code>, <code>like(...)</code>) or SQL strings.</li>
+            </ul>
+        </section>
+
+        <!-- Building DataFrame from RDD -->
+        <section id="rdd-to-dataframe" class="content-section">
+            <h2>🔄 Build a DataFrame from an RDD (Using namedtuple)</h2>
+            
+            <p>(This matches your syllabus: "load an RDD into DataFrame, give schema via namedtuple, register as table, run SQL")</p>
+            
+            <p>We'll assume Arisconn's raw text has many columns, and the 6 we need are at these positions (as in your notes):</p>
+            <ul>
+                <li>SensorId = column 0</li>
+                <li>CarId = column 1</li>
+                <li>Latitude = column 2</li>
+                <li>Longitude = column 4</li>
+                <li>VehicleSpeed = column 6</li>
+                <li>TypeOfMessage = column 9</li>
+            </ul>
+            
+            <h3>Step 2.1 — Load raw text as an RDD</h3>
+            <div class="highlight-box">
+                <p><strong>sc.textFile(path):</strong> reads a text file into an RDD of strings (each line is a string).</p>
+            </div>
+            
+            <div class="code-block">
+# SparkSession `spark` exists in PySpark shell; grab its SparkContext:
+sc = spark.sparkContext
+
+raw = sc.textFile("/HDFSPath/ArisconnDataset.txt")  # change path if needed
+header = raw.first()
+
+# Remove header + blank lines
+body = (raw
+        .filter(lambda l: l and l.strip())
+        .filter(lambda l: l != header))
+            </div>
+            
+            <h3>Step 2.2 — Parse each line and keep only the 6 fields (as strings)</h3>
+            <p>We'll not cast yet; we'll filter out "?" first (per requirement).</p>
+            <p><strong>namedtuple gives the DataFrame column names automatically when we create the DF from the RDD.</strong></p>
+            
+            <div class="code-block">
+from collections import namedtuple
+
+Car = namedtuple("Car", ["SensorId","CarId","Latitude","Longitude","VehicleSpeed","TypeOfMessage"])
+
+def parse_six(line):
+    p = [x.strip() for x in line.split(",")]
+    # Guard: we need at least 10 columns to access index 9 safely
+    if len(p) < 10:
+        return None  # malformed; skip later
+    return Car(
+        p[0],  # SensorId
+        p[1],  # CarId
+        p[2],  # Latitude (string for now)
+        p[4],  # Longitude (string for now)
+        p[6],  # VehicleSpeed (string for now)
+        p[9]   # TypeOfMessage
+    )
+
+cars_rdd = body.map(parse_six).filter(lambda x: x is not None)
+            </div>
+            
+            <h3>Step 2.3 — Convert the RDD to a DataFrame</h3>
+            <div class="highlight-box">
+                <p><strong>spark.createDataFrame(rdd):</strong> builds a DataFrame.</p>
+                <p>Because we used a namedtuple, Spark picks up those field names as column names.</p>
+            </div>
+            
+            <div class="code-block">
+cars_df = spark.createDataFrame(cars_rdd)  # columns: SensorId, CarId, Latitude, Longitude, VehicleSpeed, TypeOfMessage
+
+cars_df.show(5, truncate=False)
+cars_df.printSchema()  # expect all StringType at this point
+            </div>
+            
+            <h3>Step 2.4 — Register as a temporary SQL table</h3>
+            <div class="highlight-box">
+                <p><strong>createOrReplaceTempView("name"):</strong> creates a session-scoped, in-memory table (no file).</p>
+                <p>Then we can run SQL with <code>spark.sql("...")</code>.</p>
+            </div>
+            
+            <div class="code-block">
+cars_df.createOrReplaceTempView("cars")
+            </div>
+        </section>
+
+        <!-- Arisconn Requirements -->
+        <section id="arisconn-requirements" class="content-section">
+            <h2>🎯 Arisconn's 4 Requirements via Spark SQL</h2>
+            
+            <p>We'll do them exactly in SQL.</p>
+            <p>(You could use DataFrame API too, but the module says "execute SQL queries against the table".)</p>
+            
+            <h3>Requirement 1 — Filter fields</h3>
+            <p>We already kept only the 6 fields when parsing.</p>
+            <p>If you want to be explicit in SQL, select them again:</p>
+            
+            <div class="code-block">
+spark.sql("""
+  SELECT SensorId, CarId, Latitude, Longitude, VehicleSpeed, TypeOfMessage
+  FROM cars
+  LIMIT 5
+""").show(truncate=False)
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Functions used:</h4>
+                <ul>
+                    <li><strong>SELECT ... FROM cars:</strong> standard SQL selection.</li>
+                    <li><strong>LIMIT 5:</strong> print just 5 rows.</li>
+                </ul>
+            </div>
+            
+            <h3>Requirement 2 — Discard records containing '?' (invalid)</h3>
+            <p>Your notes say: "Filter valid records i.e., discard records containing '?'".</p>
+            <p>We'll treat any '?' in any of the 6 columns as invalid.</p>
+            
+            <div class="code-block">
+valid = spark.sql("""
+  SELECT SensorId, CarId, Latitude, Longitude, VehicleSpeed, TypeOfMessage
+  FROM cars
+  WHERE SensorId      <> '?'
+    AND CarId         <> '?'
+    AND Latitude      <> '?'
+    AND Longitude     <> '?'
+    AND VehicleSpeed  <> '?'
+    AND TypeOfMessage <> '?'
+""")
+valid.createOrReplaceTempView("valid")
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Terms explained:</h4>
+                <ul>
+                    <li><strong>WHERE col <> '?'</strong> = keep rows where the column is not the string "?".</li>
+                    <li><strong>createOrReplaceTempView("valid")</strong> = register result as another temp table for the next step.</li>
+                </ul>
+            </div>
+            
+            <h3>Requirement 3 — Keep only error messages (TypeOfMessage)</h3>
+            <p>Your note says errors start with "ERR".</p>
+            <p>We'll use SQL's <code>LIKE 'ERR%'</code> ("starts with ERR").</p>
+            
+            <div class="code-block">
+err_only = spark.sql("""
+  SELECT SensorId, CarId, Latitude, Longitude, VehicleSpeed, TypeOfMessage
+  FROM valid
+  WHERE TypeOfMessage LIKE 'ERR%'
+""")
+err_only.createOrReplaceTempView("err_only")
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Term:</h4>
+                <p><strong>LIKE 'ERR%'</strong> = string pattern; % means "any suffix".</p>
+            </div>
+            
+            <h3>Requirement 4 — Aggregate: count errors per car</h3>
+            <p>Use GROUP BY CarId, then COUNT(*).</p>
+            
+            <div class="code-block">
+errors_per_car = spark.sql("""
+  SELECT CarId, COUNT(*) AS ErrorCount
+  FROM err_only
+  GROUP BY CarId
+  ORDER BY ErrorCount DESC
+""")
+
+errors_per_car.show(20, truncate=False)
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Terms:</h4>
+                <ul>
+                    <li><strong>GROUP BY CarId:</strong> group rows per car.</li>
+                    <li><strong>COUNT(*):</strong> number of rows in each group.</li>
+                    <li><strong>ORDER BY ErrorCount DESC:</strong> sort by highest error count.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Optional Type Casting -->
+        <section class="content-section">
+            <h2>🔧 (Optional) Cast Types After Filtering</h2>
+            
+            <p>If you want Latitude/Longitude as Double and VehicleSpeed as Integer, cast now (safe because we removed '?'):</p>
+            
+            <div class="code-block">
+from pyspark.sql.functions import col
+
+typed = (err_only
+    .withColumn("Latitude",     col("Latitude").cast("double"))
+    .withColumn("Longitude",    col("Longitude").cast("double"))
+    .withColumn("VehicleSpeed", col("VehicleSpeed").cast("int")))
+
+typed.printSchema()
+typed.show(5, truncate=False)
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Functions:</h4>
+                <ul>
+                    <li><strong>withColumn(name, expr):</strong> replace/create a column.</li>
+                    <li><strong>col("name").cast("double"):</strong> convert to a numeric type; bad parses become null (we already filtered "?", so we're fine).</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Why Better Than RDD -->
+        <section class="content-section">
+            <h2>✨ Why This is Better Than Raw RDD Code (Per Your Module)</h2>
+            
+            <ul>
+                <li>Schema + names (no fragile index positions like c[6]).</li>
+                <li>SQL expresses filters/aggregations clearly.</li>
+                <li>If schema changes (column order), you're safer because you name columns.</li>
+                <li>The "count per car" is a single query (no one-count-per-car loops).</li>
+            </ul>
+        </section>
+
+        <!-- Mini Exercises -->
+        <section class="content-section">
+            <h2>💪 Mini Exercises (Tiny & Focused)</h2>
+            
+            <h3>1. Sanity counts at each stage:</h3>
+            <div class="code-block">
+print("cars rows   :", spark.table("cars").count())
+print("valid rows  :", spark.table("valid").count())
+print("err_only rows:", spark.table("err_only").count())
+            </div>
+            
+            <h3>2. Top-N cars with most errors</h3>
+            <p>(we already ordered DESC). Change show(20) to show(5).</p>
+            
+            <h3>3. Check distinct message types before LIKE 'ERR%':</h3>
+            <div class="code-block">
+spark.sql("SELECT SUBSTR(TypeOfMessage,1,3) prefix, COUNT(*) c FROM valid GROUP BY prefix").show()
+            </div>
+            <p>(You should see ERR, maybe WAR/INF depending on your data.)</p>
+        </section>
+
+        <!-- Common Issues -->
+        <section id="common-issues" class="content-section">
+            <h2>⚠️ Common Issues & Solutions</h2>
+            
+            <h3>Wrong Header Setting</h3>
+            <ul>
+                <li><strong>Symptom:</strong> columns look like data values.</li>
+                <li><strong>Fix:</strong> use header=False and rename with .toDF(...).</li>
+            </ul>
+            
+            <h3>Special Column Names (like Senior(Y/N))</h3>
+            <ul>
+                <li><strong>Symptom:</strong> SQL errors about unresolved column or needing backticks.</li>
+                <li><strong>Fix:</strong> rename once (SeniorYN) or use backticks in SQL:</li>
+            </ul>
+            <div class="code-block">
+SELECT `Senior(Y/N)` FROM telecom
+            </div>
+            
+            <h3>Types Not What You Expect</h3>
+            <ul>
+                <li><strong>Symptom:</strong> numbers are strings.</li>
+                <li><strong>Fix:</strong> cast after reading:</li>
+            </ul>
+            <div class="code-block">
+from pyspark.sql.functions import col
+df = df.withColumn("Calls", col("Calls").cast("int"))
+            </div>
+            
+            <h3>Forgot to Create a Temp View</h3>
+            <ul>
+                <li><strong>Symptom:</strong> spark.sql(...) says table not found.</li>
+                <li><strong>Fix:</strong></li>
+            </ul>
+            <div class="code-block">
+df.createOrReplaceTempView("telecom")
+            </div>
+        </section>
+
+        <!-- Quick Recap -->
+        <section class="content-section">
+            <h2>📝 Quick Recap</h2>
+            
+            <div class="highlight-box success">
+                <h4>SQLContext/HiveContext/SparkSession:</h4>
+                <ul>
+                    <li><strong>SQLContext</strong> → SQL on DataFrames (built on sc).</li>
+                    <li><strong>HiveContext</strong> → SQL + Hive features (also on sc).</li>
+                    <li><strong>SparkSession (spark)</strong> → the one modern entry that covers both.</li>
+                    <li>In shell, spark already exists. In scripts, build it with SparkSession.builder...getOrCreate().</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>DataFrame Creation:</h4>
+                <ul>
+                    <li>Use <code>spark.read.csv(...)</code> (files) or <code>spark.createDataFrame(...)</code> (Python data) to build a DataFrame</li>
+                    <li>Rename tricky columns if needed</li>
+                    <li>Check with <code>show()</code> / <code>printSchema()</code></li>
+                    <li>Register with <code>createOrReplaceTempView()</code> to run SQL</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>What You Learned:</h4>
+                <ul>
+                    <li>DataFrame = distributed table (rows + named columns).</li>
+                    <li>Build DF from RDD using namedtuple → <code>spark.createDataFrame(rdd)</code>.</li>
+                    <li>Register DF as a temp view → <code>createOrReplaceTempView("name")</code>.</li>
+                    <li>Use SQL to express the 4 requirements:
+                        <ul>
+                            <li>select 6 fields</li>
+                            <li>drop '?' rows</li>
+                            <li>keep TypeOfMessage starting with ERR</li>
+                            <li>GROUP BY CarId + COUNT(*)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="topic-navigation">
+            <a href="spark-sql.html" class="nav-link">
+                <span>←</span>
+                <span>Previous: Spark SQL Architecture</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span>Home</span>
+                <span>🏠</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+                <a href="shared-variables.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Shared Variables</span>
+                </a>
+                <a href="spark-sql.html" class="nav-link">
+                    <span class="nav-icon">🗃️</span>
+                    <span class="nav-text">Spark SQL</span>
+                </a>
+                <a href="spark-sql-programming.html" class="nav-link">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">SQL Programming</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+        // Function to bypass password screen
+        function bypassPasswordScreen() {
+            if (passwordScreen) {
+                passwordScreen.style.display = 'none';
+            }
+            
+            // Always skip splash for returning users - go directly to main content
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Click to skip splash functionality
+        const splash = document.getElementById('welcomeSplash');
+        if (splash) {
+            splash.addEventListener('click', () => {
+                splash.classList.add('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.content-header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

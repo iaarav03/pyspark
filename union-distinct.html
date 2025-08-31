@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Union & Distinct Operations - PySpark RDD Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#union">Union</a>
+                <a href="#distinct">Distinct</a>
+                <a href="#combined">Combined</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>🔄 Union & Distinct Operations</h1>
+            <p>Learn how to combine RDDs and remove duplicates - detailed guide with examples and edge cases</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / Union & Distinct Operations
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#introduction">🎯 Introduction</a></li>
+                <li><a href="#union">🔄 Union Operation</a></li>
+                <li><a href="#distinct">🔍 Distinct Operation</a></li>
+                <li><a href="#combined">🤝 Combining Union and Distinct</a></li>
+                <li><a href="#edge-cases">🚨 Edge Cases</a></li>
+                <li><a href="#performance">💡 Performance Tips</a></li>
+                <li><a href="#exercises">🧪 Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="introduction" class="content-section">
+            <h2>🎯 Introduction</h2>
+            <p>Think of RDDs like <strong>boxes of toys</strong>. Sometimes you want to combine two boxes (Union), and sometimes you want to remove duplicate toys from a box (Distinct).</p>
+            
+            <div class="highlight-box">
+                <h4>🧸 Simple Analogy:</h4>
+                <ul>
+                    <li><strong>Union</strong>: Combining two toy boxes into one big box (keeps duplicates)</li>
+                    <li><strong>Distinct</strong>: Removing duplicate toys from your toy box</li>
+                    <li><strong>Union + Distinct</strong>: Combine boxes and remove duplicates</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="union" class="content-section">
+            <h2>🔄 UNION Operation</h2>
+            
+            <h3>What is Union?</h3>
+            <p>Union is like <strong>combining two toy boxes into one big box</strong>. If you have:</p>
+            <ul>
+                <li>Box A: [toy car, toy plane, toy boat]</li>
+                <li>Box B: [toy train, toy car, toy helicopter]</li>
+            </ul>
+            <p>After union: [toy car, toy plane, toy boat, toy train, toy car, toy helicopter]</p>
+            
+            <div class="highlight-box warning">
+                <h4>⚠️ Important:</h4>
+                <p>Union keeps ALL items, even duplicates!</p>
+            </div>
+
+            <h3>Basic Union Syntax</h3>
+            <div class="code-block">
+# Basic syntax
+combined_rdd = rdd1.union(rdd2)
+            </div>
+
+            <h3>🎯 Example 1: Basic Union with Numbers</h3>
+            <div class="code-block">
+# Create SparkContext (you already have this in your Docker environment)
+from pyspark import SparkContext
+sc = SparkContext.getOrCreate()
+
+# Create two simple RDDs - like two boxes of numbers
+numbers1 = sc.parallelize([1, 2, 3, 4, 5])
+numbers2 = sc.parallelize([4, 5, 6, 7, 8])
+
+# Union them together - combine both boxes
+combined_numbers = numbers1.union(numbers2)
+
+# Let's see what we got
+print("Numbers1:", numbers1.collect())
+print("Numbers2:", numbers2.collect())
+print("After Union:", combined_numbers.collect())
+
+# Output:
+# Numbers1: [1, 2, 3, 4, 5]
+# Numbers2: [4, 5, 6, 7, 8]
+# After Union: [1, 2, 3, 4, 5, 4, 5, 6, 7, 8]
+            </div>
+
+            <div class="highlight-box">
+                <h4>🔍 Notice:</h4>
+                <p>Numbers 4 and 5 appear twice! Union doesn't remove duplicates.</p>
+            </div>
+
+            <h3>🎯 Example 2: Union with Strings (Names)</h3>
+            <div class="code-block">
+# Two classes of students
+class_a = sc.parallelize(["Alice", "Bob", "Charlie", "David"])
+class_b = sc.parallelize(["Charlie", "Eve", "Frank", "Alice"])
+
+# Combine both classes for a school event
+all_students = class_a.union(class_b)
+
+print("Class A students:", class_a.collect())
+print("Class B students:", class_b.collect())
+print("All students combined:", all_students.collect())
+print("Total count:", all_students.count())
+
+# Output:
+# Class A students: ['Alice', 'Bob', 'Charlie', 'David']
+# Class B students: ['Charlie', 'Eve', 'Frank', 'Alice']
+# All students combined: ['Alice', 'Bob', 'Charlie', 'David', 'Charlie', 'Eve', 'Frank', 'Alice']
+# Total count: 8
+            </div>
+
+            <h3>🎯 Example 3: Union with Your CSV Data</h3>
+            <div class="code-block">
+# Let's use your telecom data
+# First, let's create two subsets
+telecom_rdd = sc.textFile("/data/TelecomData.csv")
+
+# Skip header and split into two parts
+header = telecom_rdd.first()
+data_without_header = telecom_rdd.filter(lambda line: line != header)
+
+# Create two subsets (first half and second half)
+total_count = data_without_header.count()
+first_half = data_without_header.sample(False, 0.5, seed=42)
+second_half = data_without_header.subtract(first_half)
+
+# Now union them back
+reunited_data = first_half.union(second_half)
+
+print("First half count:", first_half.count())
+print("Second half count:", second_half.count())
+print("After union count:", reunited_data.count())
+            </div>
+        </section>
+
+        <section id="distinct" class="content-section">
+            <h2>🔍 DISTINCT Operation</h2>
+            
+            <h3>What is Distinct?</h3>
+            <p>Distinct is like <strong>removing duplicate toys from your toy box</strong>. If you have:</p>
+            <ul>
+                <li>Box: [toy car, toy plane, toy car, toy boat, toy plane, toy car]</li>
+            </ul>
+            <p>After distinct: [toy car, toy plane, toy boat]</p>
+
+            <h3>Basic Distinct Syntax</h3>
+            <div class="code-block">
+# Basic syntax
+unique_rdd = rdd.distinct()
+            </div>
+
+            <h3>🎯 Example 4: Basic Distinct</h3>
+            <div class="code-block">
+# RDD with duplicates
+numbers_with_duplicates = sc.parallelize([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5])
+
+# Remove duplicates
+unique_numbers = numbers_with_duplicates.distinct()
+
+print("Original with duplicates:", numbers_with_duplicates.collect())
+print("After distinct:", unique_numbers.collect())
+print("Original count:", numbers_with_duplicates.count())
+print("Unique count:", unique_numbers.count())
+
+# Output:
+# Original with duplicates: [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5]
+# After distinct: [1, 2, 3, 4, 5]
+# Original count: 11
+# Unique count: 5
+            </div>
+
+            <h3>🎯 Example 5: Distinct with Strings</h3>
+            <div class="code-block">
+# Students with duplicate names (maybe from different forms)
+all_students_with_duplicates = sc.parallelize([
+    "Alice", "Bob", "Charlie", "Alice", "David", "Eve", 
+    "Charlie", "Frank", "Bob", "Alice"
+])
+
+# Get unique students
+unique_students = all_students_with_duplicates.distinct()
+
+print("All students (with duplicates):", all_students_with_duplicates.collect())
+print("Unique students:", unique_students.collect())
+
+# Output:
+# All students (with duplicates): ['Alice', 'Bob', 'Charlie', 'Alice', 'David', 'Eve', 'Charlie', 'Frank', 'Bob', 'Alice']
+# Unique students: ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank']
+            </div>
+        </section>
+
+        <section id="combined" class="content-section">
+            <h2>🤝 Combining Union and Distinct</h2>
+            <p>This is where it gets really powerful! Remember our earlier union example with duplicate students?</p>
+
+            <h3>🎯 Example 6: Union + Distinct = Perfect Combination</h3>
+            <div class="code-block">
+# Two classes with some common students
+class_a = sc.parallelize(["Alice", "Bob", "Charlie", "David"])
+class_b = sc.parallelize(["Charlie", "Eve", "Frank", "Alice"])
+
+# Step 1: Union (combine both classes)
+all_students_with_duplicates = class_a.union(class_b)
+print("After Union:", all_students_with_duplicates.collect())
+
+# Step 2: Distinct (remove duplicates)
+unique_students = all_students_with_duplicates.distinct()
+print("After Union + Distinct:", unique_students.collect())
+
+# One-liner version
+unique_combined = class_a.union(class_b).distinct()
+print("One-liner result:", unique_combined.collect())
+
+# Output:
+# After Union: ['Alice', 'Bob', 'Charlie', 'David', 'Charlie', 'Eve', 'Frank', 'Alice']
+# After Union + Distinct: ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank']
+# One-liner result: ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank']
+            </div>
+
+            <h3>🎯 Real-World Example: Customer Data</h3>
+            <div class="code-block">
+# Imagine you have customer data from two different sources
+customers_online = sc.parallelize([
+    "cust001,John,Doe,online",
+    "cust002,Jane,Smith,online", 
+    "cust003,Bob,Johnson,online",
+    "cust004,Alice,Brown,online"
+])
+
+customers_store = sc.parallelize([
+    "cust002,Jane,Smith,store",  # Same customer, different channel
+    "cust005,Charlie,Davis,store",
+    "cust006,Eve,Wilson,store",
+    "cust003,Bob,Johnson,store"  # Same customer, different channel
+])
+
+# Union all customers
+all_customers = customers_online.union(customers_store)
+print("All customer records:", all_customers.count())
+
+# But we want unique customers by ID
+# Extract customer IDs
+customer_ids = all_customers.map(lambda line: line.split(",")[0])
+unique_customer_ids = customer_ids.distinct()
+
+print("Unique customer IDs:", unique_customer_ids.collect())
+print("Total unique customers:", unique_customer_ids.count())
+            </div>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>🚨 Edge Cases and Important Things to Remember</h2>
+
+            <h3>Edge Case 1: Empty RDDs</h3>
+            <div class="code-block">
+# What happens with empty RDDs?
+empty_rdd = sc.parallelize([])
+numbers = sc.parallelize([1, 2, 3])
+
+# Union with empty RDD
+result1 = empty_rdd.union(numbers)
+result2 = numbers.union(empty_rdd)
+
+print("Empty + Numbers:", result1.collect())
+print("Numbers + Empty:", result2.collect())
+
+# Distinct on empty RDD
+empty_distinct = empty_rdd.distinct()
+print("Empty distinct:", empty_distinct.collect())
+
+# Output:
+# Empty + Numbers: [1, 2, 3]
+# Numbers + Empty: [1, 2, 3]
+# Empty distinct: []
+            </div>
+
+            <h3>Edge Case 2: Single Element RDDs</h3>
+            <div class="code-block">
+single1 = sc.parallelize([42])
+single2 = sc.parallelize([42])  # Same value
+single3 = sc.parallelize([100])  # Different value
+
+# Union same values
+same_union = single1.union(single2)
+print("Same single values union:", same_union.collect())
+
+# Distinct will remove the duplicate
+same_distinct = same_union.distinct()
+print("After distinct:", same_distinct.collect())
+
+# Output:
+# Same single values union: [42, 42]
+# After distinct: [42]
+            </div>
+
+            <h3>Edge Case 3: Different Data Types (BE CAREFUL!)</h3>
+            <div class="code-block">
+# This works but can be confusing
+numbers = sc.parallelize([1, 2, 3])
+strings = sc.parallelize(["1", "2", "4"])  # Note: strings, not numbers
+
+mixed = numbers.union(strings)
+print("Mixed types:", mixed.collect())
+# Output: [1, 2, 3, '1', '2', '4']
+
+# Distinct will treat "1" and 1 as different!
+mixed_distinct = mixed.distinct()
+print("Mixed distinct:", mixed_distinct.collect())
+# Output: [1, 2, 3, '1', '2', '4'] - Both 1 and "1" are kept!
+            </div>
+
+            <div class="highlight-box error">
+                <h4>⚠️ Warning:</h4>
+                <p>Mixing data types can lead to unexpected results. Always ensure your RDDs contain the same type of data!</p>
+            </div>
+
+            <h3>Edge Case 4: Very Large RDDs</h3>
+            <div class="code-block">
+# When working with large datasets
+large_rdd1 = sc.parallelize(range(1000000))  # 1 million numbers
+large_rdd2 = sc.parallelize(range(500000, 1500000))  # Another million with overlap
+
+# Union is fast - just combines partitions
+large_union = large_rdd1.union(large_rdd2)
+print("Large union count:", large_union.count())
+
+# Distinct is expensive - needs to shuffle data across network
+large_distinct = large_union.distinct()
+print("Large distinct count:", large_distinct.count())
+            </div>
+        </section>
+
+        <section id="performance" class="content-section">
+            <h2>💡 Performance Tips</h2>
+
+            <h3>1. Union is Cheap, Distinct is Expensive</h3>
+            <div class="code-block">
+# Union: O(1) - just combines partitions
+# Distinct: O(n) - needs to shuffle and compare all data
+
+# If you need both, do union first, then distinct
+result = rdd1.union(rdd2).distinct()  # Good
+# Not: rdd1.distinct().union(rdd2.distinct()).distinct()  # Wasteful
+            </div>
+
+            <h3>2. Partitioning Matters</h3>
+            <div class="code-block">
+# Better performance with proper partitioning
+rdd1 = sc.parallelize([1,2,3,4,5], numSlices=2)
+rdd2 = sc.parallelize([6,7,8,9,10], numSlices=2)
+
+# Union preserves partitioning structure
+union_rdd = rdd1.union(rdd2)
+print("Number of partitions after union:", union_rdd.getNumPartitions())
+            </div>
+
+            <div class="highlight-box">
+                <h4>📊 Performance Summary:</h4>
+                <table>
+                    <tr>
+                        <th>Operation</th>
+                        <th>What it does</th>
+                        <th>Performance</th>
+                        <th>Use Case</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Union</strong></td>
+                        <td>Combines two RDDs, keeps duplicates</td>
+                        <td>Fast O(1)</td>
+                        <td>Merging datasets</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Distinct</strong></td>
+                        <td>Removes duplicates from RDD</td>
+                        <td>Slow O(n)</td>
+                        <td>Data cleaning</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Union + Distinct</strong></td>
+                        <td>Combines and cleans in one go</td>
+                        <td>Medium</td>
+                        <td>Merging + cleaning</td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <section id="exercises" class="content-section">
+            <h2>🧪 Practice Exercises</h2>
+            <p>Try these in your Docker PySpark environment:</p>
+
+            <h3>Exercise 1: Create two RDDs with your favorite movies</h3>
+            <div class="code-block">
+movies_action = sc.parallelize(["Avengers", "Batman", "Superman", "Iron Man"])
+movies_comedy = sc.parallelize(["Iron Man", "Deadpool", "Guardians", "Avengers"])
+
+# Your tasks:
+# 1. Union them and count total
+# 2. Find unique movies
+# 3. Find which movies appear in both lists (hint: use intersection)
+            </div>
+
+            <h3>Exercise 2: Work with your CSV data</h3>
+            <div class="code-block">
+# 1. Load your telecom data
+# 2. Split it into two random samples
+# 3. Union them back
+# 4. Verify you get the original count
+            </div>
+
+            <h3>Exercise 3: Clean duplicate customer records</h3>
+            <div class="code-block">
+# Create an RDD with customer data that has duplicates
+# Remove duplicates while preserving the most recent record
+            </div>
+
+            <div class="highlight-box success">
+                <h4>🎯 Key Takeaways:</h4>
+                <ol>
+                    <li><strong>Union</strong> = Combine two boxes, keep everything (including duplicates)</li>
+                    <li><strong>Distinct</strong> = Remove duplicates from one box</li>
+                    <li><strong>Union + Distinct</strong> = Combine and clean in one go</li>
+                    <li>Union is fast, Distinct is slow (needs network shuffling)</li>
+                    <li>Always consider your data types - mixing types can be tricky!</li>
+                </ol>
+            </div>
+        </section>
+
+        <div class="topic-navigation">
+            <a href="basic.html" class="nav-link">← Previous: PySpark Basics</a>
+            <a href="countbykey-collectasmap.html" class="nav-link">Next: countByKey & collectAsMap →</a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="countbykey-collectasmap.html" class="nav-link">
+                    <span class="nav-icon">🗝️</span>
+                    <span class="nav-text">countByKey & collectAsMap</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. Created with ❤️ by Aarav for learning purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

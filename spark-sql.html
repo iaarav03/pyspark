@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark SQL Architecture & Data Types - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="content-header">
+        <div class="content-title">
+            <h1>🗃️ PySpark SQL Architecture & Data Types</h1>
+            <p>Master Spark SQL architecture, data types, and structured data processing with comprehensive examples</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="#spark-sql">Spark SQL</a>
+        </div>
+    </header>
+
+    <main class="content-body">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#three-layers">Three Layers of Spark SQL Architecture</a></li>
+                <li><a href="#architectural-flow">Architectural Flow of Spark SQL Job</a></li>
+                <li><a href="#component-integration">Integration with Other Spark Components</a></li>
+                <li><a href="#data-types-overview">Spark SQL Data Types Overview</a></li>
+                <li><a href="#data-types-detailed">Data Types - Detailed Explanation</a></li>
+                <li><a href="#schema-creation">Building DataFrames with Explicit Types</a></li>
+                <li><a href="#telecom-schema">Applying Types to Telecom Dataset</a></li>
+                <li><a href="#edge-cases">Edge Cases & Gotchas</a></li>
+                <li><a href="#exercises">Mini Exercises</a></li>
+                <li><a href="#function-glossary">Function Glossary</a></li>
+            </ul>
+        </div>
+
+        <!-- Three Layers -->
+        <section id="three-layers" class="content-section">
+            <h2>🏗️ Three Layers (Big Picture)</h2>
+            
+            <h3>A) Data Source Layer</h3>
+            <div class="highlight-box success">
+                <h4>"Where data comes from."</h4>
+                <p>Supports many formats: Parquet, JSON, CSV/TSV, "Hadoop files", and JDBC sources.</p>
+                <p>You point Spark at a path or a table, Spark reads it as a DataFrame.</p>
+            </div>
+            
+            <h4>Tiny Demo (CSV):</h4>
+            <div class="code-block">
+# assumes SparkSession `spark` exists
+df_csv = (spark.read
+          .option("header", True)
+          .option("inferSchema", True)     # simple for now
+          .csv("/data/TelecomData.csv"))
+df_csv.show(3)
+            </div>
+            
+            <p>(You could similarly do <code>.parquet(...)</code>, <code>.json(...)</code>, or <code>.format("jdbc").option(...).load()</code> for JDBC.)</p>
+            
+            <h3>B) Computation Layer</h3>
+            <div class="highlight-box success">
+                <h4>"Where structure + queries live."</h4>
+                <p>Older term: SchemaRDD (historical). Now we use DataFrame.</p>
+                <p>Spark SQL parses and executes your SQL here.</p>
+                <p>Dataset API exists, but not in Python (only Scala/Java).</p>
+            </div>
+            
+            <h4>Tiny Demo (create a table-like view and query):</h4>
+            <div class="code-block">
+df_csv.createOrReplaceTempView("telecom")
+spark.sql("SELECT Mode, COUNT(*) AS c FROM telecom GROUP BY Mode").show()
+            </div>
+            
+            <h3>C) Language API Layer</h3>
+            <div class="highlight-box success">
+                <h4>"How you access SQL/DataFrames."</h4>
+                <p>You can use Python/Scala/Java code, ODBC/JDBC, console clients, and even HiveQL inside Spark SQL.</p>
+                <p>In Python, you typically write either DataFrame code or SQL strings via <code>spark.sql(...)</code>.</p>
+            </div>
+            
+            <h4>Tiny Demo (two equivalent ways):</h4>
+            <div class="code-block">
+# SQL string
+spark.sql("SELECT COUNT(*) FROM telecom").show()
+
+# DataFrame API
+from pyspark.sql.functions import count
+df_csv.select(count("*")).show()
+            </div>
+        </section>
+
+        <!-- Architectural Flow -->
+        <section id="architectural-flow" class="content-section">
+            <h2>🔄 Architectural Flow of a Spark SQL Job</h2>
+            
+            <p>When you run a SQL query or a DataFrame transformation:</p>
+            
+            <div class="highlight-box">
+                <ol>
+                    <li><strong>Parse</strong> your SQL/DataFrame ops into a logical plan</li>
+                    <li><strong>Analyze</strong> (resolve column names, types)</li>
+                    <li><strong>Optimize</strong> (Catalyst optimizer rewrites/optimizes the plan)</li>
+                    <li><strong>Plan physical execution</strong> (choose joins, scans, etc.)</li>
+                    <li><strong>Execute on the cluster</strong> (translates to RDD tasks on executors)</li>
+                </ol>
+            </div>
+            
+            <h3>Tiny Demo: inspect the plan with explain()</h3>
+            <div class="code-block">
+q = spark.sql("""
+  SELECT CarId, COUNT(*) AS ErrorCount
+  FROM telecom
+  WHERE TypeOfMessage LIKE 'ERR%'
+    AND SensorId <> '?'
+    AND CarId <> '?'
+  GROUP BY CarId
+  ORDER BY ErrorCount DESC
+""")
+
+q.explain(True)   # prints parsed/analyzed/optimized/physical plans
+q.show(10, truncate=False)
+            </div>
+            
+            <p>(You don't need to memorize the plan; just know Spark SQL is optimizing under the hood.)</p>
+        </section>
+
+        <!-- Component Integration -->
+        <section id="component-integration" class="content-section">
+            <h2>🔗 How Spark SQL Fits with Other Spark Components</h2>
+            
+            <h3>Structured Streaming (built on Spark SQL / Spark Core)</h3>
+            <p>A scalable, fault-tolerant streaming engine (from Spark 2.3.0).</p>
+            <p>You write logic with DataFrame/Dataset APIs (Python uses DataFrame).</p>
+            <p>Same API style for streaming and batch.</p>
+            
+            <div class="code-block">
+# skeleton only — do not run without a real source/sink
+stream_df = (spark.readStream
+             .format("socket")
+             .option("host","localhost").option("port",9999)
+             .load())
+# stream_df is a DataFrame; you can use SQL/DataFrame ops on it.
+            </div>
+            
+            <h3>Spark SQL with Machine Learning (MLlib)</h3>
+            <ul>
+                <li>MLlib works with both RDD-based and DataFrame-based APIs.</li>
+                <li>The DataFrame API is generally more user-friendly now.</li>
+                <li>Spark SQL features (DataFrame queries, Catalyst optimizer) are leveraged inside ML pipelines.</li>
+            </ul>
+            
+            <h3>Spark SQL with GraphX / GraphFrames</h3>
+            <ul>
+                <li>GraphFrames integrates graph algorithms/pattern matching with Spark SQL (DataFrames).</li>
+                <li>It brings a graph-aware planner to speed up graph-like queries.</li>
+                <li>(GraphX itself is Scala-centric; GraphFrames is the DataFrame bridge you'd use with SQL.)</li>
+            </ul>
+            
+            <h3>Beyond HDFS Files</h3>
+            <p>Spark SQL can analyze NoSQL stores like HBase and Cassandra via their connectors—still using DataFrames/SQL once connected.</p>
+        </section>
+
+        <!-- Mini Practice -->
+        <section class="content-section">
+            <h2>🏃 Mini Practice (Tiny, Safe)</h2>
+            
+            <div class="highlight-box">
+                <h4>Data Source layer:</h4>
+                <p>Run the CSV read and show(3) above.</p>
+                
+                <h4>Computation layer:</h4>
+                <p>Register telecom and run:</p>
+                <div class="code-block">
+spark.sql("SELECT InternetStatus, COUNT(*) c FROM telecom GROUP BY InternetStatus").show()
+                </div>
+                
+                <h4>Explain flow:</h4>
+                <p>Take any query and do <code>.explain(True)</code> to see the plan.</p>
+            </div>
+        </section>
+
+        <!-- Key Takeaways -->
+        <section class="content-section">
+            <h2>🔑 Key Takeaways (Matching Your Module)</h2>
+            
+            <div class="highlight-box success">
+                <ul>
+                    <li><strong>Layers:</strong> Data Source → Computation (DataFrame) → Language API.</li>
+                    <li><strong>Python uses DataFrame</strong> (not Dataset).</li>
+                    <li><strong>Spark SQL integrates</strong> with Streaming, MLlib, GraphFrames, and external systems (HBase/Cassandra).</li>
+                    <li><strong>Use:</strong> <code>spark.read(...)</code> → DataFrame → <code>createOrReplaceTempView(...)</code> → <code>spark.sql(...)</code>.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Data Types Overview -->
+        <section id="data-types-overview" class="content-section">
+            <h2>📊 Spark SQL Data Types - Overview</h2>
+            
+            <h3>What "Data Type" Means in Spark SQL</h3>
+            <div class="highlight-box">
+                <p><strong>Data type</strong> = how Spark stores/understands a column (number, text, date, etc.).</p>
+                <p><strong>Schema</strong> = the list of columns with their data types (like a table definition).</p>
+                <p><strong>Spark SQL's types live in</strong> <code>pyspark.sql.types</code>.</p>
+            </div>
+            
+            <h4>Why it matters:</h4>
+            <ul>
+                <li>Correct types → correct math (sums, averages), comparisons, date logic, grouping.</li>
+                <li>Wrong types (e.g., treating numbers as strings) → wrong results or errors.</li>
+            </ul>
+            
+            <h3>Where the Types Live (Import)</h3>
+            <p><strong>Term:</strong> <code>pyspark.sql.types</code> — the Python module that defines Spark SQL types.</p>
+            
+            <div class="code-block">
+from pyspark.sql import SparkSession
+from pyspark.sql.types import (
+    StructType, StructField, StringType, BooleanType,
+    ByteType, ShortType, IntegerType, LongType,
+    FloatType, DoubleType, DecimalType,
+    DateType, TimestampType,
+    ArrayType, MapType
+)
+
+spark = spark if 'spark' in globals() else SparkSession.builder.getOrCreate()
+            </div>
+            
+            <div class="highlight-box">
+                <ul>
+                    <li><strong>StructType:</strong> a schema made of fields.</li>
+                    <li><strong>StructField(name, dataType, nullable):</strong> one column definition.</li>
+                    <li><strong>The rest</strong> (e.g., IntegerType) are data type classes.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Data Types Detailed -->
+        <section id="data-types-detailed" class="content-section">
+            <h2>🔍 Core Data Type Families (With Tiny Examples)</h2>
+            
+            <h3>A) Numbers</h3>
+            <ul>
+                <li><strong>ByteType, ShortType, IntegerType, LongType:</strong> whole numbers (increasing size).</li>
+                <li><strong>FloatType, DoubleType:</strong> decimal numbers (binary floating point).</li>
+                <li><strong>DecimalType(precision, scale):</strong> decimal with fixed digits (good for money).</li>
+            </ul>
+            
+            <h4>What "precision/scale" mean (Decimal):</h4>
+            <p><code>DecimalType(10, 2)</code> → up to 10 digits total, with 2 after the decimal (e.g., 12345678.90).</p>
+            <p>If a value doesn't fit, it becomes null when casting.</p>
+            
+            <h4>Example (numbers + decimal):</h4>
+            <div class="code-block">
+from pyspark.sql import Row
+rows = [Row(n_str="42", price_str="123.456")]
+df = spark.createDataFrame(rows)
+
+# cast to Integer and Decimal(10,2)
+df_num = (df
+    .withColumn("n_int", df.n_str.cast("int"))                     # -> 42
+    .withColumn("price_dec", df.price_str.cast(DecimalType(10,2))) # -> 123.46 (rounded)
+)
+df_num.printSchema()
+df_num.show()
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Function used: .cast("int") or .cast(DecimalType(...))</h4>
+                <p><strong>cast</strong> converts a column to a target type. If conversion fails (e.g., "abc" to int), result is null.</p>
+            </div>
+            
+            <h3>B) Text / Boolean / Binary</h3>
+            <ul>
+                <li><strong>StringType:</strong> text.</li>
+                <li><strong>BooleanType:</strong> True/False.</li>
+                <li><strong>BinaryType:</strong> byte arrays (rare in simple analytics).</li>
+            </ul>
+            
+            <h4>Example (string → boolean using Y/N):</h4>
+            <div class="code-block">
+from pyspark.sql.functions import when, col
+
+rows = [Row(flag="Y"), Row(flag="N"), Row(flag="")]
+
+dfb = spark.createDataFrame(rows)
+# when(condition, value).otherwise(value) builds conditional logic.
+dfb2 = dfb.withColumn(
+    "flag_bool",
+    when(col("flag")=="Y", True)
+    .when(col("flag")=="N", False)
+    .otherwise(None).cast(BooleanType())
+)
+dfb2.printSchema()
+dfb2.show()
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Functions used:</h4>
+                <ul>
+                    <li><strong>when(condition, value):</strong> SQL-style IF.</li>
+                    <li><strong>otherwise(value):</strong> else part.</li>
+                    <li><strong>col("name"):</strong> refers to a column object (used inside expressions).</li>
+                </ul>
+            </div>
+            
+            <h3>C) Dates / Timestamps</h3>
+            <ul>
+                <li><strong>DateType:</strong> calendar date without time.</li>
+                <li><strong>TimestampType:</strong> date with time.</li>
+                <li><strong>Parsing strings:</strong> use <code>to_date(col, pattern)</code> or <code>to_timestamp(col, pattern)</code>.</li>
+            </ul>
+            
+            <div class="code-block">
+from pyspark.sql.functions import to_date, to_timestamp
+
+rows = [Row(d="2024-01-31", ts="2024-01-31 14:30:00")]
+dft = spark.createDataFrame(rows)
+
+dft2 = (dft
+    .withColumn("d_date", to_date(col("d"), "yyyy-MM-dd"))
+    .withColumn("ts_time", to_timestamp(col("ts"), "yyyy-MM-dd HH:mm:ss"))
+)
+dft2.printSchema()
+dft2.show(truncate=False)
+            </div>
+            
+            <p>If the string doesn't match the pattern, the result is null.</p>
+            
+            <h3>D) Complex Types</h3>
+            <ul>
+                <li><strong>ArrayType(T):</strong> ordered list of elements of type T.</li>
+                <li><strong>MapType(K,V):</strong> key/value dictionary.</li>
+                <li><strong>StructType([...]):</strong> nested struct (row inside a row).</li>
+            </ul>
+            
+            <h4>Example (quick array + map):</h4>
+            <div class="code-block">
+from pyspark.sql.functions import split, create_map, lit
+
+rows = [Row(tags="A|B|C", k="region", v="APAC")]
+dfa = spark.createDataFrame(rows)
+
+dfa2 = (dfa
+    .withColumn("tags_arr", split(col("tags"), "\\|"))  # String -> Array[String]
+    .withColumn("props", create_map(lit("region"), lit("APAC")))  # Map[String,String]
+)
+dfa2.printSchema()
+dfa2.show(truncate=False)
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Functions used:</h4>
+                <ul>
+                    <li><strong>split(col, regex):</strong> split string to array.</li>
+                    <li><strong>create_map(k1, v1, k2, v2, ...):</strong> build a map from literals/columns.</li>
+                    <li><strong>lit(value):</strong> wrap a Python literal to use in expressions.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Schema Creation -->
+        <section id="schema-creation" class="content-section">
+            <h2>🏗️ Building DataFrames with Explicit Types</h2>
+            
+            <p><strong>Purpose:</strong> see how to declare a schema & how Spark holds types.</p>
+            
+            <div class="code-block">
+from pyspark.sql import SparkSession, Row
+from pyspark.sql.types import (
+    StructType, StructField, StringType, IntegerType, DoubleType,
+    BooleanType, DateType, TimestampType, ArrayType, MapType
+)
+import datetime as dt
+
+spark = spark if 'spark' in globals() else SparkSession.builder.getOrCreate()
+
+schema = StructType([
+    StructField("id",        StringType(),  False),
+    StructField("age",       IntegerType(), True),
+    StructField("score",     DoubleType(),  True),
+    StructField("vip",       BooleanType(), True),
+    StructField("joined",    DateType(),    True),
+    StructField("event_ts",  TimestampType(), True),
+    StructField("tags",      ArrayType(StringType()), True),
+    StructField("props",     MapType(StringType(), StringType()), True),
+])
+
+data = [(
+    "U1", 30, 88.5, True,
+    dt.date(2024, 1, 2),
+    dt.datetime(2024, 1, 2, 12, 34, 56),
+    ["A","B"], {"region":"APAC","tier":"gold"}
+)]
+
+df_demo = spark.createDataFrame(data, schema=schema)
+df_demo.printSchema()
+df_demo.show(truncate=False)
+            </div>
+            
+            <h3>Things to Notice:</h3>
+            <div class="highlight-box">
+                <ul>
+                    <li><strong>printSchema()</strong> shows the types you set.</li>
+                    <li>You passed real Python date/datetime, lists, and dicts—Spark stored them as DateType, TimestampType, ArrayType, MapType.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Telecom Schema -->
+        <section id="telecom-schema" class="content-section">
+            <h2>📱 Apply Types to Your Telecom Dataset</h2>
+            
+            <p>Your headers include Senior(Y/N) and Churn(Y/N). We'll rename those to safe names, then cast to proper types.</p>
+            
+            <h3>Goal Schema (simple & practical):</h3>
+            <div class="highlight-box">
+                <ul>
+                    <li><strong>CustomerID</strong> → StringType</li>
+                    <li><strong>Mobile</strong> → StringType</li>
+                    <li><strong>Gender</strong> → StringType</li>
+                    <li><strong>SeniorYN</strong> → BooleanType (from "Y"/"N")</li>
+                    <li><strong>Mode</strong> → StringType</li>
+                    <li><strong>Calls</strong> → IntegerType</li>
+                    <li><strong>SMS</strong> → IntegerType</li>
+                    <li><strong>InternetStatus</strong> → StringType</li>
+                    <li><strong>MonthlyCharges</strong> → DoubleType (or DecimalType(10,2) if you prefer fixed scale)</li>
+                    <li><strong>ChurnYN</strong> → BooleanType (from "Y"/"N")</li>
+                </ul>
+            </div>
+            
+            <h3>Step-by-Step Implementation</h3>
+            
+            <h4>Functions used here (definitions):</h4>
+            <div class="highlight-box">
+                <ul>
+                    <li><strong>withColumnRenamed(old, new):</strong> rename a column.</li>
+                    <li><strong>withColumn(name, expr):</strong> create/replace a column with an expression.</li>
+                    <li><strong>trim(col):</strong> remove spaces around text.</li>
+                    <li><strong>upper(col):</strong> uppercase text.</li>
+                    <li><strong>printSchema():</strong> show column types.</li>
+                    <li><strong>show(n, truncate=False):</strong> print rows.</li>
+                </ul>
+            </div>
+            
+            <div class="code-block">
+from pyspark.sql.functions import col, trim, upper, when
+from pyspark.sql.types import DecimalType
+
+# 1) read as strings (no inference)
+df_raw = (spark.read
+          .option("header", True)
+          .option("inferSchema", False)
+          .csv("/data/TelecomData.csv"))
+
+# 2) rename tricky headers once
+df1 = (df_raw
+    .withColumnRenamed("Senior(Y/N)", "SeniorYN")
+    .withColumnRenamed("Churn(Y/N)",  "ChurnYN"))
+
+# 3) normalize text columns
+df2 = (df1
+    .withColumn("Gender",         upper(trim(col("Gender"))))
+    .withColumn("SeniorYN",       upper(trim(col("SeniorYN"))))
+    .withColumn("Mode",           upper(trim(col("Mode"))))
+    .withColumn("InternetStatus", upper(trim(col("InternetStatus"))))
+    .withColumn("ChurnYN",        upper(trim(col("ChurnYN"))))
+)
+
+# 4) cast to target types safely
+df_typed = (df2
+    .withColumn("Calls",          col("Calls").cast(IntegerType()))
+    .withColumn("SMS",            col("SMS").cast(IntegerType()))
+    .withColumn("MonthlyCharges", col("MonthlyCharges").cast(DecimalType(10,2)))  # fixed 2 decimals
+    .withColumn("SeniorYN",
+        when(col("SeniorYN")=="Y", True)
+       .when(col("SeniorYN")=="N", False)
+       .otherwise(None).cast(BooleanType()))
+    .withColumn("ChurnYN",
+        when(col("ChurnYN")=="Y", True)
+       .when(col("ChurnYN")=="N", False)
+       .otherwise(None).cast(BooleanType()))
+)
+
+df_typed.printSchema()
+df_typed.show(5, truncate=False)
+            </div>
+            
+            <h3>Why String-First?</h3>
+            <div class="highlight-box warning">
+                <p>If a field has "?", "NA", or spaces, direct inference can be wrong.</p>
+                <p>By casting ourselves, bad values → null (safe), and we decide the rules.</p>
+            </div>
+        </section>
+
+        <!-- Edge Cases -->
+        <section id="edge-cases" class="content-section">
+            <h2>⚠️ Edge Cases (Exact Behavior)</h2>
+            
+            <h3>1) Casting Failures → Null</h3>
+            <div class="code-block">
+spark.createDataFrame([("abc",)], ["x"]).select(col("x").cast("int")).show()
+# -> null
+            </div>
+            
+            <h3>2) Decimal Overflow → Null</h3>
+            <p>Value too big for precision/scale. Use larger precision if needed: <code>DecimalType(18,2)</code>.</p>
+            
+            <h3>3) Booleans from Text</h3>
+            <p>Spark doesn't auto-convert "Y"/"N" → use when.</p>
+            
+            <h3>4) Trimming & Uppercasing</h3>
+            <p>Real-world CSVs often have " postpaid "; trim and upper make values consistent.</p>
+            
+            <h3>5) Dates/Times</h3>
+            <p>Strings must match patterns exactly, else null.</p>
+        </section>
+
+        <!-- Mini Exercises -->
+        <section id="exercises" class="content-section">
+            <h2>💪 Mini Exercises (Short, Focused)</h2>
+            
+            <h3>Exercise 1: Check Nulls Created by Casting</h3>
+            <div class="code-block">
+from pyspark.sql.functions import sum as Fsum
+df_typed.select(
+    Fsum(col("Calls").isNull().cast("int")).alias("null_calls"),
+    Fsum(col("SMS").isNull().cast("int")).alias("null_sms"),
+    Fsum(col("MonthlyCharges").isNull().cast("int")).alias("null_charges")
+).show()
+            </div>
+            <p>Explain in your own words why each null happened.</p>
+            
+            <h3>Exercise 2: Decimal vs Double</h3>
+            <p>Change MonthlyCharges cast to <code>DoubleType()</code> and compare <code>printSchema()</code>.</p>
+            
+            <h3>Exercise 3: Boolean Sanity</h3>
+            <p>Show counts by SeniorYN and ChurnYN:</p>
+            <div class="code-block">
+df_typed.groupBy("SeniorYN").count().show()
+df_typed.groupBy("ChurnYN").count().show()
+            </div>
+            
+            <h3>Exercise 4: Date Parsing Practice</h3>
+            <p>If you add a string column like "2024-05-10" in a tiny DF, use <code>to_date</code> to convert to DateType, and show the schema.</p>
+        </section>
+
+        <!-- Function Glossary -->
+        <section id="function-glossary" class="content-section">
+            <h2>📖 Function Glossary (Every Function We Used)</h2>
+            
+            <div class="highlight-box">
+                <ul>
+                    <li><strong>col("Name"):</strong> reference a DataFrame column in expressions.</li>
+                    <li><strong>withColumn(name, expr):</strong> create/replace a column with the result of expr.</li>
+                    <li><strong>withColumnRenamed(old, new):</strong> rename a column.</li>
+                    <li><strong>trim(col):</strong> remove leading/trailing spaces.</li>
+                    <li><strong>upper(col):</strong> convert string to uppercase.</li>
+                    <li><strong>when(cond, value).otherwise(v):</strong> conditional expression (IF/ELSE).</li>
+                    <li><strong>cast(type):</strong> convert a column to a given type; failures → null.</li>
+                    <li><strong>printSchema():</strong> display column names and data types.</li>
+                    <li><strong>show(n, truncate=False):</strong> print first n rows without cutting text.</li>
+                    <li><strong>StructType([...]) / StructField(...):</strong> define a schema explicitly.</li>
+                    <li><strong>DecimalType(p,s):</strong> exact-precision decimal type; p=total digits, s=digits after decimal.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="topic-navigation">
+            <a href="shared-variables.html" class="nav-link">
+                <span>←</span>
+                <span>Previous: Shared Variables</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span>Home</span>
+                <span>🏠</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+                <a href="shared-variables.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Shared Variables</span>
+                </a>
+                <a href="spark-sql.html" class="nav-link">
+                    <span class="nav-icon">🗃️</span>
+                    <span class="nav-text">Spark SQL</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+        // Function to bypass password screen
+        function bypassPasswordScreen() {
+            if (passwordScreen) {
+                passwordScreen.style.display = 'none';
+            }
+            
+            // Always skip splash for returning users - go directly to main content
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Click to skip splash functionality
+        const splash = document.getElementById('welcomeSplash');
+        if (splash) {
+            splash.addEventListener('click', () => {
+                splash.classList.add('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.content-header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

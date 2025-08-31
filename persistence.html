@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Persistence & Caching - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="content-header">
+        <div class="content-title">
+            <h1>🔄 PySpark Persistence & Caching</h1>
+            <p>Master RDD persistence, caching strategies, and performance optimization techniques</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="#persistence">Persistence</a>
+        </div>
+    </header>
+
+    <main class="content-body">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#when-to-persist">When Should You Persist?</a></li>
+                <li><a href="#cache-vs-persist">cache() vs persist()</a></li>
+                <li><a href="#building-reusable-rdd">Building & Caching Reusable RDD</a></li>
+                <li><a href="#reusing-cached-rdd">Reusing Cached RDD</a></li>
+                <li><a href="#inspecting-unpersisting">Inspecting & Unpersisting</a></li>
+                <li><a href="#storage-levels">Storage Levels Guide</a></li>
+                <li><a href="#demo-example">Persistence Demo Example</a></li>
+                <li><a href="#edge-cases">Edge Cases & Gotchas</a></li>
+                <li><a href="#exercises">Practice Exercises</a></li>
+                <li><a href="#detailed-explanation">Detailed Step-by-Step Guide</a></li>
+                <li><a href="#real-world-examples">Real-World Examples</a></li>
+                <li><a href="#best-practices">Best Practices & Template</a></li>
+            </ul>
+        </div>
+
+        <!-- When Should You Persist -->
+        <section id="when-to-persist" class="content-section">
+            <h2>🎯 When Should You Persist?</h2>
+            <p>Persist an RDD when:</p>
+            <ul>
+                <li><strong>It's expensive to compute</strong> (e.g., parsing/cleansing, joins, aggregation pre-steps)</li>
+                <li><strong>You'll reuse it in multiple actions</strong> or downstream transformations</li>
+            </ul>
+            
+            <div class="highlight-box success">
+                <h4>💡 Perfect Example</h4>
+                <p>In your workflow, "postpaid customers" is a great candidate you'll query repeatedly.</p>
+            </div>
+        </section>
+
+        <!-- cache() vs persist() -->
+        <section id="cache-vs-persist" class="content-section">
+            <h2>⚖️ cache() vs persist(StorageLevel...)</h2>
+            
+            <div class="code-block">
+rdd.cache() == rdd.persist(StorageLevel.MEMORY_ONLY)
+            </div>
+            
+            <p><code>persist</code> lets you choose other storage levels (spill to disk, serialize, etc.). More on levels below.</p>
+        </section>
+
+        <!-- Building Reusable RDD -->
+        <section id="building-reusable-rdd" class="content-section">
+            <h2>🏗️ Build & Cache a Reusable RDD</h2>
+            
+            <div class="code-block">
+from pyspark import StorageLevel
+
+# 0) You already have: rdd -> non_empty -> header -> base -> clean
+
+# 1) Focus slice we'll reuse a lot: all POSTPAID customers
+#    NOTE: you normalized strings to UPPER in parse_or_skip, so use "POSTPAID"
+postpaid = (clean
+            .filter(lambda r: r[4] == "POSTPAID"))  # r[4] = Mode
+postpaid = postpaid.setName("POSTPAID_only")       # nice for Spark UI
+
+# 2) Persist it
+# Option A (simple): 
+postpaid_cached = postpaid.cache()
+# Option B (safer under memory pressure): 
+# postpaid_cached = postpaid.persist(StorageLevel.MEMORY_AND_DISK)
+
+# 3) MATERIALIZE the cache so all partitions are actually stored.
+# Use an action that touches ALL partitions. count() is the simplest.
+_ = postpaid_cached.count()
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>⚠️ Why the count()?</h4>
+                <p>Persistence is lazy; the above warms the cache so later actions reuse in-memory (or on-disk) partitions rather than recomputing the lineage.</p>
+            </div>
+        </section>
+
+        <!-- Reusing Cached RDD -->
+        <section id="reusing-cached-rdd" class="content-section">
+            <h2>🔄 Reuse the Cached RDD for Multiple Actions</h2>
+            
+            <h3>A) Total Revenue of Postpaid Customers</h3>
+            <p>Two flavors - both handle missing/dirty charges robustly:</p>
+            
+            <h4>(i) Numeric RDD + sum() (simplest/fastest):</h4>
+            <div class="code-block">
+# r[8] = MonthlyCharges (float or None in your parser)
+total_rev = (postpaid_cached
+             .map(lambda r: r[8])                                # take charges
+             .filter(lambda x: x is not None and x >= 0)         # keep valid
+             .sum())                                             # action
+print("Total Postpaid Revenue:", total_rev)
+            </div>
+            
+            <h4>(ii) Pair RDD + reduceByKey (to mirror "by key" patterns):</h4>
+            <div class="code-block">
+# Single key pattern (just to practice reduceByKey and keep shape)
+pairs = (postpaid_cached
+         .flatMap(lambda r: [("POSTPAID", r[8])] 
+                  if (r[8] is not None and r[8] >= 0) else []))
+rev_by_mode = pairs.reduceByKey(lambda a, b: a + b).collect()
+for k, v in rev_by_mode:
+    print(k, v)
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>🚨 Safe Pattern</h4>
+                <p>Never do <code>int(r[8])</code> blindly; you already parsed to float and may have None. Filter first.</p>
+            </div>
+            
+            <h3>B) All Mobile Numbers of Postpaid Customers with ACTIVE Internet</h3>
+            <div class="code-block">
+# r[7] = InternetStatus; you uppercased it during parsing
+active_postpaid_mobiles = (postpaid_cached
+                           .filter(lambda r: r[7] == "ACTIVE")
+                           .map(lambda r: r[1]))                 # r[1] = Mobile
+
+# SAFETY: avoid collect() on large data. Peek a few + count:
+print("Count:", active_postpaid_mobiles.count())
+print("Sample:", active_postpaid_mobiles.take(10))
+# If you truly need everything, prefer saveAsTextFile(...) instead of collect().
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>✅ Performance Benefit</h4>
+                <p>Because we warmed the cache earlier, both computations reuse cached partitions instead of recomputing from clean.</p>
+            </div>
+        </section>
+
+        <!-- Inspecting & Unpersisting -->
+        <section id="inspecting-unpersisting" class="content-section">
+            <h2>🔍 Inspecting & Unpersisting</h2>
+            
+            <div class="code-block">
+# What's currently cached?
+print(sc.getPersistentRDDs())   # {rdd_id: RDD} — handy for debugging
+
+# Unpersist when done (free memory). 
+# blocking=True waits until the cache is cleared (good for deterministic tests).
+postpaid_cached.unpersist(blocking=True)
+            </div>
+            
+            <p>You can change storage level by unpersist() first, then persist(new_level) and re-materialize with count().</p>
+        </section>
+
+        <!-- Storage Levels -->
+        <section id="storage-levels" class="content-section">
+            <h2>💾 Storage Levels (What to Pick, When)</h2>
+            
+            <div class="code-block">
+from pyspark import StorageLevel
+
+# Common choices:
+StorageLevel.MEMORY_ONLY           # fastest reads; recompute if evicted
+StorageLevel.MEMORY_ONLY_SER       # uses less RAM (serialized); CPU cost
+StorageLevel.MEMORY_AND_DISK       # avoids recompute; spills partitions
+StorageLevel.MEMORY_AND_DISK_SER   # smaller footprint + spill
+StorageLevel.DISK_ONLY             # slowest reads; no recompute
+# StorageLevel.OFF_HEAP            # only if off-heap memory configured
+            </div>
+            
+            <h3>Rules of Thumb:</h3>
+            <ul>
+                <li><strong>Small reusable RDDs</strong> → <code>MEMORY_ONLY</code></li>
+                <li><strong>Medium/large RDDs with risk of eviction</strong> → <code>MEMORY_AND_DISK</code> (very common and safe)</li>
+                <li><strong>Cluster RAM tight</strong> → <code>*_SER</code> variants to cut memory at the cost of CPU</li>
+            </ul>
+            
+            <div class="highlight-box warning">
+                <h4>⚠️ Important Note</h4>
+                <p>If partitions get evicted with MEMORY_ONLY, Spark will recompute those partitions (LRU). If recomputation is expensive, prefer MEMORY_AND_DISK.</p>
+            </div>
+        </section>
+
+        <!-- Demo Example -->
+        <section id="demo-example" class="content-section">
+            <h2>🧪 Tiny Toy Demo to Feel Persistence</h2>
+            <p>This is self-contained and safe; it doesn't touch your dataset. Run it to observe 1st vs 2nd action timing.</p>
+            
+            <div class="code-block">
+import time
+from pyspark import StorageLevel
+
+def slow_square(x):
+    time.sleep(0.2)  # pretend it's expensive
+    return x * x
+
+demo = sc.parallelize(range(20), 4).map(slow_square)
+
+# Without persist: both actions take ~same time (both recompute)
+t0 = time.time(); s1 = demo.sum(); t1 = time.time()
+t2 = time.time(); m1 = demo.max(); t3 = time.time()
+print("No persist -> sum:", round(t1 - t0, 2), "s; max:", round(t3 - t2, 2), "s")
+
+# With persist: 2nd action is much faster
+demo_cached = demo.persist(StorageLevel.MEMORY_ONLY)
+_ = demo_cached.count()  # warm the cache
+t4 = time.time(); s2 = demo_cached.sum(); t5 = time.time()
+t6 = time.time(); m2 = demo_cached.max(); t7 = time.time()
+print("With persist -> sum:", round(t5 - t4, 2), "s; max:", round(t7 - t6, 2), "s")
+demo_cached.unpersist()
+            </div>
+        </section>
+
+        <!-- Edge Cases & Gotchas -->
+        <section id="edge-cases" class="content-section">
+            <h2>⚠️ Edge Cases & Gotchas (Read Me!)</h2>
+            
+            <div class="highlight-box error">
+                <h4>🚨 Critical Points to Remember</h4>
+                <ul>
+                    <li><strong>Persistence is lazy:</strong> nothing is stored until an action runs. Warm with count() (touches all partitions). first() or take(1) won't fill the whole cache.</li>
+                    <li><strong>Non-deterministic transforms:</strong> (e.g., map(lambda _: random()), time-based logic) will produce different values each recomputation. If you need stable results across actions, persist before the first action.</li>
+                    <li><strong>Skew/large partitions:</strong> caching a massive, skewed partition can OOM. Consider repartition/partitionBy (for Pair RDDs) before caching.</li>
+                    <li><strong>Changing storage level:</strong> call unpersist() first, then persist(new_level) and re-materialize.</li>
+                    <li><strong>Don't over-cache:</strong> each cached RDD consumes resources. Cache only what you reuse; unpersist when done.</li>
+                    <li><strong>Eviction LRU:</strong> under memory pressure, some partitions may be evicted and recomputed on access (unless spilled with MEMORY_AND_DISK).</li>
+                    <li><strong>Serialization choice:</strong> *_SER minimizes memory but adds CPU. If you've configured Kryo serialization, it's usually more compact/faster than Java serialization (cluster-level setting).</li>
+                    <li><strong>cache vs broadcast:</strong> cache stores RDD partitions; broadcast stores a single read-only object on each executor. Different tools.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Practice Exercises -->
+        <section id="exercises" class="content-section">
+            <h2>💪 Mini Exercises (All RDD, on clean)</h2>
+            
+            <h3>Exercise 1: Pick the Right Level</h3>
+            <div class="highlight-box">
+                <p>Build <code>active_postpaid</code> (Mode=="POSTPAID" and InternetStatus=="ACTIVE").</p>
+                <p>Persist it with MEMORY_AND_DISK, warm it, and compute:</p>
+                <ul>
+                    <li>(a) count of rows</li>
+                    <li>(b) total MonthlyCharges</li>
+                    <li>(c) top 5 mobiles by Calls (handle None safely)</li>
+                </ul>
+                <p>Then unpersist().</p>
+            </div>
+            
+            <h3>Exercise 2: Show Eviction Behavior</h3>
+            <div class="highlight-box">
+                <p>Persist a large RDD with MEMORY_ONLY, run several actions, then swap to MEMORY_AND_DISK and compare whether later actions avoid recomputation (watch task logs).</p>
+            </div>
+            
+            <h3>Exercise 3: Non-determinism Check</h3>
+            <div class="highlight-box">
+                <p>Create <code>rand_rdd = postpaid_cached.mapPartitions(lambda it: (__import__("random").random() for _ in it))</code>.</p>
+                <p>Compare two actions without caching vs with caching (sum twice). Explain the difference.</p>
+            </div>
+            
+            <h3>Exercise 4: Practice "Unpersist All"</h3>
+            <div class="highlight-box">
+                <p>Write a small helper that unpersists everything:</p>
+                <div class="code-block">
+for _id, r in sc.getPersistentRDDs().items():
+    r.unpersist()
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Step-by-Step Guide -->
+        <section id="detailed-explanation" class="content-section">
+            <h2>🎓 Detailed Step-by-Step Guide (Ultra-Clear)</h2>
+            
+            <div class="highlight-box success">
+                <h4>💛 Mental Picture (Plain Words)</h4>
+                <p><strong>Spark is lazy:</strong> it remembers how to compute an RDD (the recipe), but it doesn't cook it until you ask for a result (an action like count, collect, saveAsTextFile, sum, etc.).</p>
+                <p><strong>If you run two actions on the same RDD without caching,</strong> Spark may re-do the whole recipe twice.</p>
+                <p><strong>Persist / cache = "after you cook it once, keep the food so the next action doesn't re-cook."</strong></p>
+                <p>That's it. Now code.</p>
+            </div>
+            
+            <h3>0) Your Base (Already Provided)</h3>
+            <p>We'll reuse your clean RDD (parsed and normalized). I'll assume you already ran this:</p>
+            
+            <div class="code-block">
+# Load & prep
+rdd = sc.textFile("/data/TelecomData.csv")
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+# Robust-ish parser (RDD focus; skip malformed)
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: return []
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    return [(
+        p[0].strip(),             # id
+        p[1].strip(),             # mobile
+        norm(p[2]),               # gender
+        norm(p[3]) == "Y",        # senior -> bool
+        norm(p[4]),               # mode
+        zint(p[5]),               # calls
+        zint(p[6]),               # sms
+        norm(p[7]),               # net status
+        zfloat(p[8]),             # charges
+        norm(p[9]) == "Y"         # churn -> bool
+    )]
+
+clean = base.flatMap(parse_or_skip)
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>Important:</h4>
+                <p>Your strings are UPPERCASED in parse_or_skip, so we'll match "POSTPAID", "ACTIVE", etc.</p>
+            </div>
+            
+            <h3>1) Smallest Useful Target We'll Reuse: Postpaid Customers</h3>
+            <h4>Build it (no cache yet)</h4>
+            <div class="code-block">
+postpaid = clean.filter(lambda r: r[4] == "POSTPAID")  # r[4] = Mode
+postpaid = postpaid.setName("POSTPAID_only")           # nice label (shows in UI/logs)
+            </div>
+            
+            <h4>Why this is a good cache candidate</h4>
+            <ul>
+                <li>The filter sits on top of parsing/cleaning. Recomputing it every time = wasted work.</li>
+                <li>We'll run multiple actions on it (revenue, lists, counts). Perfect for caching.</li>
+            </ul>
+            
+            <h3>2) Feel Spark's Laziness First (No Cache): Two Actions Re-run the Recipe</h3>
+            <div class="code-block">
+import time
+
+t0 = time.time()
+c1 = postpaid.count()           # 1st action: compute everything
+t1 = time.time()
+
+t2 = time.time()
+c2 = postpaid.count()           # 2nd action: recompute everything again
+t3 = time.time()
+
+print("postpaid counts:", c1, c2)
+print("1st count time (no cache):", round(t1 - t0, 2), "s")
+print("2nd count time (no cache):", round(t3 - t2, 2), "s")
+            </div>
+            
+            <p>You'll often see both times similar because Spark did the whole thing twice.</p>
+            
+            <h3>3) Cache / Persist (What, How, and a Tiny Rule)</h3>
+            <ul>
+                <li><code>rdd.cache() = rdd.persist(StorageLevel.MEMORY_ONLY)</code></li>
+                <li>Safer "doesn't blow up if memory is tight": <code>MEMORY_AND_DISK</code></li>
+                <li><strong>Rule:</strong> cache before your first action, then run one action to warm the cache (materialize).</li>
+            </ul>
+            
+            <div class="code-block">
+from pyspark import StorageLevel
+
+postpaid_cached = postpaid.persist(StorageLevel.MEMORY_AND_DISK)  # safer default
+# OR: postpaid_cached = postpaid.cache()  # fastest if it fits in RAM
+
+# WARM the cache: run an action that touches *all* partitions
+_ = postpaid_cached.count()   # important! first action actually stores the data
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>⚠️ Important</h4>
+                <p><code>first()</code> or <code>take(1)</code> does not fill the whole cache—only the first partition. Use <code>count()</code> to touch all.</p>
+            </div>
+            
+            <h3>4) Now Re-run Actions Quickly (The Cache is Hot)</h3>
+            <div class="code-block">
+import time
+
+t0 = time.time()
+c1 = postpaid_cached.count()     # should reuse cache
+t1 = time.time()
+
+t2 = time.time()
+c2 = postpaid_cached.count()     # still cached
+t3 = time.time()
+
+print("postpaid_cached counts:", c1, c2)
+print("1st cached count time:", round(t1 - t0, 2), "s")
+print("2nd cached count time:", round(t3 - t2, 2), "s")
+            </div>
+            
+            <p>You should see these much faster than the "no cache" ones.</p>
+            
+            <h3>5) Do Real Work on the Cached RDD</h3>
+            <h4>(A) Total Revenue from Postpaid Customers</h4>
+            <p>We'll be careful with None charges and negatives.</p>
+            
+            <div class="code-block">
+total_rev = (postpaid_cached
+             .map(lambda r: r[8])                                  # r[8] = MonthlyCharges (float or None)
+             .filter(lambda x: x is not None and x >= 0)           # keep only valid values
+             .sum())                                               # action
+print("Total Postpaid Revenue:", total_rev)
+            </div>
+            
+            <h4>Edge Case Notes</h4>
+            <ul>
+                <li>If your data had "NA", your parser converts that to None → safely filtered out.</li>
+                <li><code>sum()</code> on RDD returns 0.0 for empty RDD, so you're safe if no postpaid rows exist.</li>
+            </ul>
+            
+            <h4>(B) List Mobiles of Postpaid Customers with ACTIVE Internet</h4>
+            <div class="code-block">
+active_pp_mobiles = (postpaid_cached
+                     .filter(lambda r: r[7] == "ACTIVE")  # r[7] = InternetStatus (UPPER)
+                     .map(lambda r: r[1]))                # r[1] = Mobile
+
+print("Active postpaid count:", active_pp_mobiles.count())
+print("First few mobiles:", active_pp_mobiles.take(10))
+# Avoid collect() on large data; prefer take(), saveAsTextFile(), or foreachPartition.
+            </div>
+            
+            <p>Because <code>postpaid_cached</code> is… cached, both computations skip recomputation of parsing/filtering.</p>
+            
+            <h3>6) Inspect What's Cached and How to Unpersist</h3>
+            <div class="code-block">
+# list what's cached
+print(sc.getPersistentRDDs())          # {rdd_id: RDD}
+
+# see level flags (optional but educational)
+lvl = postpaid_cached.getStorageLevel()
+print("useDisk:", lvl.useDisk, "useMemory:", lvl.useMemory, "useOffHeap:", lvl.useOffHeap,
+      "deserialized:", lvl.deserialized, "replication:", lvl.replication)
+
+# free it (block until freed for determinism in small labs)
+postpaid_cached.unpersist(blocking=True)
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Gotcha:</h4>
+                <p><code>unpersist()</code> without <code>blocking=True</code> returns immediately; cache cleanup happens in background. For tiny labs/tests, I like <code>blocking=True</code>.</p>
+            </div>
+            
+            <h3>7) Which StorageLevel Should I Pick? (Simple Cheat-Sheet)</h3>
+            <ul>
+                <li><strong>MEMORY_ONLY</strong> — fastest reads, but if RAM is tight, partitions get evicted → Spark recomputes them later.</li>
+                <li><strong>MEMORY_AND_DISK</strong> — my safe default: keeps partitions in RAM if possible, spills to disk otherwise → avoids recomputation.</li>
+                <li><strong>*_SER variants</strong> — store serialized form → less memory but more CPU to (de)serialize.</li>
+                <li><strong>DISK_ONLY</strong> — reads are slow, but you won't recompute.</li>
+            </ul>
+            
+            <p>If your postpaid slice is small → <code>MEMORY_ONLY</code>.</p>
+            <p>If it might be medium/large → <code>MEMORY_AND_DISK</code> (what we used).</p>
+            
+            <h3>8) Tiny Synthetic Demo to Feel the Difference (Very Clear)</h3>
+            <p>This does not touch your CSV; it just creates a slow function so you can see timings.</p>
+            
+            <div class="code-block">
+import time
+from pyspark import StorageLevel
+
+def slow_square(x):
+    time.sleep(0.15)   # pretend expensive
+    return x * x
+
+demo = sc.parallelize(range(20), 4).map(slow_square)
+
+# No cache: both actions pay full cost
+t0 = time.time(); s1 = demo.sum(); t1 = time.time()
+t2 = time.time(); m1 = demo.max(); t3 = time.time()
+print("No persist -> sum:", round(t1 - t0, 2), "s; max:", round(t3 - t2, 2), "s")
+
+# Cache: 2nd action is much faster
+demo_cached = demo.persist(StorageLevel.MEMORY_ONLY)
+_ = demo_cached.count()  # warm
+t4 = time.time(); s2 = demo_cached.sum(); t5 = time.time()
+t6 = time.time(); m2 = demo_cached.max(); t7 = time.time()
+print("With persist -> sum:", round(t5 - t4, 2), "s; max:", round(t7 - t6, 2), "s")
+
+demo_cached.unpersist(blocking=True)
+            </div>
+            
+            <p><strong>Expectation:</strong> "With persist" second action is way faster.</p>
+            
+            <h3>9) Gotchas & Edge Cases (Super Practical)</h3>
+            <ul>
+                <li><strong>Lazy + warm:</strong> Persist is lazy; nothing is stored until an action runs. Always warm with count() (or another action that touches all partitions).</li>
+                <li><strong>Order matters:</strong> If you do an action before calling persist(), that earlier run wasn't cached. Call persist() first.</li>
+                <li><strong>Eviction:</strong> With MEMORY_ONLY, if RAM is low Spark evicts least-recently-used partitions. Accessing them later recomputes upstream steps. MEMORY_AND_DISK avoids that recomputation.</li>
+                <li><strong>Non-deterministic transforms:</strong> If you do randomness/time-based logic before caching, two separate actions (without cache) can give different values. Cache once to "freeze" the result for later actions.</li>
+                <li><strong>Skew / big partitions:</strong> If one partition is huge, caching it can OOM. If you suspect skew, repartition to more partitions before caching.</li>
+                <li><strong>Don't over-cache:</strong> Cache only what you'll reuse. Free it with unpersist() when you're done.</li>
+                <li><strong>Serialization:</strong> *_SER cuts memory but adds CPU overhead. If your cluster uses Kryo, it's usually faster and smaller than Java serialization (cluster setting).</li>
+                <li><strong>cache ≠ broadcast:</strong> Cache stores many partitions per RDD; broadcast stores one small object per executor.</li>
+            </ul>
+        </section>
+
+        <!-- Best Practices Template -->
+        <section id="best-practices" class="content-section">
+            <h2>🎯 Step-by-Step Template (Copy for Any Reusable Slice)</h2>
+            
+            <div class="code-block">
+from pyspark import StorageLevel
+
+# 1) Build the slice
+slice_rdd = (clean
+             .filter(lambda r: r[4] == "POSTPAID")      # example predicate(s)
+             .setName("slice_postpaid"))
+
+# 2) Choose a level
+slice_rdd = slice_rdd.persist(StorageLevel.MEMORY_AND_DISK)
+
+# 3) Warm it (important)
+_ = slice_rdd.count()
+
+# 4) Do multiple actions safely
+count_rows = slice_rdd.count()
+sum_charges = (slice_rdd
+               .map(lambda r: r[8])
+               .filter(lambda x: x is not None and x >= 0)
+               .sum())
+top5_by_calls = (slice_rdd
+                 .filter(lambda r: r[5] is not None and r[5] >= 0)  # r[5] = Calls
+                 .keyBy(lambda r: r[5])                             # key=Calls
+                 .sortByKey(ascending=False)
+                 .map(lambda kv: kv[1][1])                          # Mobile column
+                 .take(5))
+
+print(count_rows, sum_charges, top5_by_calls)
+
+# 5) When done
+slice_rdd.unpersist(blocking=True)
+            </div>
+        </section>
+
+        <!-- Real-World Examples -->
+        <section id="real-world-examples" class="content-section">
+            <h2>🌍 Shell-Ready Code Examples</h2>
+            
+            <h3>A) If clean is already defined in your shell</h3>
+            <div class="code-block">
+from pyspark import StorageLevel
+
+# 1) Build the slice
+slice_rdd = (clean
+             .filter(lambda r: r[4] == "POSTPAID")
+             .setName("slice_postpaid"))
+
+# 2) Persist
+slice_rdd = slice_rdd.persist(StorageLevel.MEMORY_AND_DISK)
+
+# 3) Warm (materialize) the cache
+_ = slice_rdd.count()
+
+# 4) Do multiple actions
+count_rows = slice_rdd.count()
+sum_charges = (slice_rdd
+               .map(lambda r: r[8])
+               .filter(lambda x: x is not None and x >= 0)
+               .sum())
+
+top5_by_calls = (slice_rdd
+                 .filter(lambda r: r[5] is not None and r[5] >= 0)  # r[5] = Calls
+                 .keyBy(lambda r: r[5])                             # key = Calls
+                 .sortByKey(ascending=False)
+                 .map(lambda kv: kv[1][1])                          # Mobile column
+                 .take(5))
+
+print(count_rows, sum_charges, top5_by_calls)
+
+# (optional) inspect cache
+print(sc.getPersistentRDDs())
+
+# 5) Unpersist when done
+slice_rdd.unpersist(blocking=True)
+            </div>
+            
+            <h3>B) If you haven't created clean yet in the shell</h3>
+            <p>Paste your starter prep first, then run the slice code:</p>
+            
+            <div class="code-block">
+# --- starter prep ---
+rdd = sc.textFile("/data/TelecomData.csv")
+non_empty = rdd.filter(lambda l: l and l.strip())
+header = non_empty.first()
+base = non_empty.filter(lambda l: l != header)
+
+def parse_or_skip(line):
+    p = line.split(",")
+    if len(p) < 10: return []
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    return [(
+        p[0].strip(), p[1].strip(), norm(p[2]),
+        norm(p[3]) == "Y", norm(p[4]),
+        zint(p[5]), zint(p[6]), norm(p[7]),
+        zfloat(p[8]), norm(p[9]) == "Y"
+    )]
+
+clean = base.flatMap(parse_or_skip)
+            </div>
+            
+            <p>Then paste section A.</p>
+            
+            <h3>Shell Tips (So It "Just Works")</h3>
+            <ul>
+                <li>Your parentheses grouping means you can paste the whole multi-line blocks at once.</li>
+                <li>If you get <code>NameError: name 'clean' is not defined</code>, it just means you need to run the starter prep block first.</li>
+            </ul>
+            
+            <h4>To verify caching, run:</h4>
+            <div class="code-block">
+lvl = slice_rdd.getStorageLevel()
+print(lvl.useMemory, lvl.useDisk, lvl.deserialized)
+print(sc.getPersistentRDDs())
+            </div>
+            
+            <p>For very large datasets, consider <code>take(10)</code> instead of <code>collect()</code> and prefer <code>MEMORY_AND_DISK</code> (what you used) to avoid recomputation if memory is tight.</p>
+            
+            <h4>Optional Faster "Top 5" (avoids full sort/shuffle) using only RDD APIs:</h4>
+            <div class="code-block">
+# Same result, more efficient on big data
+from math import inf
+top5_fast = (slice_rdd
+             .filter(lambda r: r[5] is not None and r[5] >= 0)
+             .takeOrdered(5, key=lambda r: -(r[5])))  # max-5 by Calls
+top5_mobiles = [r[1] for r in top5_fast]
+print(top5_mobiles)
+            </div>
+        </section>
+
+        <!-- Quick Recap -->
+        <section class="content-section">
+            <h2>📝 Quick Recap (Sticky Notes)</h2>
+            
+            <div class="highlight-box success">
+                <ul>
+                    <li>Cache if expensive and reused.</li>
+                    <li><code>cache() = persist(MEMORY_ONLY)</code>; safer: <code>MEMORY_AND_DISK</code>.</li>
+                    <li>Warm with <code>count()</code> before relying on speedups.</li>
+                    <li>Avoid <code>collect()</code> on big RDDs; use <code>take()</code>/<code>saveAsTextFile()</code>.</li>
+                    <li>Unpersist when done.</li>
+                    <li>Non-deterministic transforms? Cache once to "freeze" results.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="topic-navigation">
+            <a href="union-distinct.html" class="nav-link">
+                <span>←</span>
+                <span>Previous: Union & Distinct</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span>Home</span>
+                <span>🏠</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+        // Function to bypass password screen
+        function bypassPasswordScreen() {
+            if (passwordScreen) {
+                passwordScreen.style.display = 'none';
+            }
+            
+            // Always skip splash for returning users - go directly to main content
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Click to skip splash functionality
+        const splash = document.getElementById('welcomeSplash');
+        if (splash) {
+            splash.addEventListener('click', () => {
+                splash.classList.add('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.content-header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Shared Variables & Accumulators - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="content-header">
+        <div class="content-title">
+            <h1>📊 PySpark Shared Variables & Accumulators</h1>
+            <p>Master accumulators, broadcast variables, and shared state management in distributed computing</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="#shared-variables">Shared Variables</a>
+        </div>
+    </header>
+
+    <main class="content-body">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#what-is-accumulator">What is an Accumulator?</a></li>
+                <li><a href="#important-rules">Super Important Rules</a></li>
+                <li><a href="#setup-raw-rdd">Setup: Raw Text RDD</a></li>
+                <li><a href="#exact-way">Way 1: Exact RDD-Only Logic</a></li>
+                <li><a href="#accumulator-way">Way 2: With Accumulator (Simplest)</a></li>
+                <li><a href="#efficient-variant">Efficient Variant: foreachPartition</a></li>
+                <li><a href="#why-action-needed">Why We Need Actions</a></li>
+                <li><a href="#synthetic-example">Synthetic Example with Guaranteed Blanks</a></li>
+                <li><a href="#parser-integration">Using Accumulators with Parser</a></li>
+                <li><a href="#common-pitfalls">Common Pitfalls & How to Avoid</a></li>
+                <li><a href="#execution-plan">Step-by-Step Execution Plan</a></li>
+                <li><a href="#exercises">Mini Exercises</a></li>
+                <li><a href="#why-accumulator">Why Accumulator When We Have Filter/Map/Count?</a></li>
+                <li><a href="#comparison">Side-by-Side Comparison</a></li>
+            </ul>
+        </div>
+
+        <!-- What is an Accumulator -->
+        <section id="what-is-accumulator" class="content-section">
+            <h2>🤔 What is an Accumulator? (Plain Words)</h2>
+            
+            <div class="highlight-box success">
+                <p><strong>A small number-like counter that lives on the driver.</strong></p>
+                <p>Tasks on executors can add to it (e.g., +1 for each bad record).</p>
+                <p>After an action finishes, the driver can read the final value.</p>
+            </div>
+            
+            <p><strong>Most common use:</strong> debugging/counters (e.g., "how many blank lines?" "how many parse errors?").</p>
+            <p><strong>Not ideal for core business logic</strong> that must be exactly correct—use RDD transformations for exact results.</p>
+        </section>
+
+        <!-- Important Rules -->
+        <section id="important-rules" class="content-section">
+            <h2>⚠️ Super Important Rules (Stick These on Your Monitor)</h2>
+            
+            <div class="highlight-box error">
+                <h4>🚨 Critical Rules to Remember</h4>
+                <ul>
+                    <li><strong>No action ⇒ no work:</strong> If you add to an accumulator inside a map, nothing happens until an action (like count, collect, saveAsTextFile, etc.) runs.</li>
+                    <li><strong>Read only on driver, after the action:</strong> Don't try to read the accumulator value inside executors or before the action completes.</li>
+                    <li><strong>Task retries can double-add:</strong> If an executor fails and a task is retried, your accumulator might overcount. That's why we call them best-effort counters.</li>
+                    <li><strong>Create new accumulators for new runs:</strong> You generally don't "reset" them—just create a new one.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Setup Raw RDD -->
+        <section id="setup-raw-rdd" class="content-section">
+            <h2>🔧 Setup: A Raw Text RDD (So We Can See Blank Lines)</h2>
+            
+            <p>Your existing clean RDD already removed empties. For blank-line counting we need the raw file (no filters):</p>
+            
+            <div class="code-block">
+# A raw text RDD (includes header and any blank lines)
+raw = sc.textFile("/data/TelecomData.csv")
+
+# Peek
+print("Partitions:", raw.getNumPartitions())
+print("First 3 lines:", raw.take(3))
+            </div>
+            
+            <p>If your file happens to have no blank lines, I'll also show a tiny synthetic RDD with blanks so you can see the technique work.</p>
+        </section>
+
+        <!-- Exact Way -->
+        <section id="exact-way" class="content-section">
+            <h2>✅ Way 1 (Exact, No Accumulator): RDD-Only Logic</h2>
+            
+            <p>This is the exact way (no risk of overcount). Good as a reference/check.</p>
+            
+            <div class="code-block">
+# Count blank lines exactly using RDD transforms
+blank_count_exact = (raw
+                     .map(lambda line: 1 if (not line or not line.strip()) else 0)
+                     .sum())
+print("Exact blank lines:", int(blank_count_exact))
+            </div>
+        </section>
+
+        <!-- Accumulator Way -->
+        <section id="accumulator-way" class="content-section">
+            <h2>📊 Way 2 (With Accumulator): Simplest Version</h2>
+            
+            <p>Use the accumulator to count while scanning. We'll use foreach (an action), so it will actually run.</p>
+            
+            <div class="code-block">
+# 1) Make a named accumulator (shows up in Spark UI)
+#    Using sc.accumulator(0) - modern and simple syntax
+blank_acc = sc.accumulator(0, "blank_line_counter")
+
+# 2) Add to the accumulator for each blank line
+def bump_if_blank(line):
+    if not line or not line.strip():
+        blank_acc.add(1)
+
+# 3) Run an action to trigger execution
+raw.foreach(bump_if_blank)
+
+# 4) Now read the value on the driver
+print("Accumulator blank lines:", blank_acc.value)
+            </div>
+            
+            <h3>Compare with exact result (sanity check):</h3>
+            <div class="code-block">
+print("Exact vs Accumulator:", int(blank_count_exact), blank_acc.value)
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Expectation:</h4>
+                <p>Usually they match. If you see differences in real clusters, it's often due to task retries or because you triggered multiple actions that both incremented the counter.</p>
+            </div>
+        </section>
+
+        <!-- Efficient Variant -->
+        <section id="efficient-variant" class="content-section">
+            <h2>⚡ Edge-Case-Friendly & Efficient Variant: foreachPartition</h2>
+            
+            <p>Calling <code>blank_acc.add(1)</code> for every blank line can be chatty. Instead, count locally per partition, then add once per partition:</p>
+            
+            <div class="code-block">
+blank_acc2 = sc.accumulator(0, "blank_line_counter_by_partition")
+
+def count_blanks_partition(iter_lines):
+    c = 0
+    for line in iter_lines:
+        if not line or not line.strip():
+            c += 1
+    blank_acc2.add(c)
+    return []  # mapPartitions expects an iterator back if used as a transform
+
+# `mapPartitions` is a transformation; add a cheap action to trigger it
+raw.mapPartitions(count_blanks_partition).count()
+
+print("Accumulator (by partition):", blank_acc2.value)
+            </div>
+            
+            <p>This gives the same number, with far fewer accumulator updates.</p>
+        </section>
+
+        <!-- Why Action Needed -->
+        <section id="why-action-needed" class="content-section">
+            <h2>🎯 Why We Insisted on "Use an Action"</h2>
+            
+            <p>This will NOT update anything (no action):</p>
+            
+            <div class="code-block">
+tmp_acc = sc.accumulator(0, "won't_change")
+
+# we increment inside a transformation...
+_ = raw.map(lambda line: tmp_acc.add(1) or line)  # no action -> nothing runs
+
+print("Should still be 0:", tmp_acc.value)  # 0, because no action was triggered
+            </div>
+            
+            <p>Now add an action and you'll see it jump:</p>
+            
+            <div class="code-block">
+# Trigger it
+_.count()
+print("Now it changed:", tmp_acc.value)
+            </div>
+        </section>
+
+        <!-- Synthetic Example -->
+        <section id="synthetic-example" class="content-section">
+            <h2>🧪 Tiny Synthetic Example (Guaranteed Blanks)</h2>
+            
+            <p>If your CSV has no blanks, run this to see counts change:</p>
+            
+            <div class="code-block">
+toy = sc.parallelize(["A", "", "  ", "B", "", "C"], 2)
+
+toy_exact = toy.map(lambda s: 1 if not s or not s.strip() else 0).sum()
+print("toy exact:", int(toy_exact))
+
+toy_acc = sc.accumulator(0, "toy_blanks")
+toy.foreach(lambda s: toy_acc.add(1) if (not s or not s.strip()) else None)
+print("toy accumulator:", toy_acc.value)
+            </div>
+        </section>
+
+        <!-- Parser Integration -->
+        <section id="parser-integration" class="content-section">
+            <h2>🔧 Using Accumulators with Your Parser (Very Common)</h2>
+            
+            <p>This is a realistic pattern: count bad/malformed lines during parsing (for debugging), while still returning good rows.</p>
+            
+            <p>You already have parse_or_skip. Let's wrap it to track skip counts:</p>
+            
+            <div class="code-block">
+bad_lines = sc.accumulator(0, "bad_lines")
+kept_rows = sc.accumulator(0, "kept_rows")
+
+def parse_counting(line):
+    p = line.split(",")
+    if len(p) < 10:
+        bad_lines.add(1)
+        return []
+    # (copy your original logic)
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    kept_rows.add(1)
+    return [(
+        p[0].strip(), p[1].strip(), norm(p[2]),
+        norm(p[3]) == "Y", norm(p[4]),
+        zint(p[5]), zint(p[6]), norm(p[7]),
+        zfloat(p[8]), norm(p[9]) == "Y"
+    )]
+
+debug_clean = raw.flatMap(parse_counting)  # transformation
+
+# ACTION to trigger the parsing (and therefore the accumulator updates)
+_ = debug_clean.count()
+
+print("Kept rows:", kept_rows.value, "Bad lines:", bad_lines.value)
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>✅ Why This is Nice</h4>
+                <p>You can keep an eye on data quality without changing the business logic that uses debug_clean.</p>
+            </div>
+        </section>
+
+        <!-- Common Pitfalls -->
+        <section id="common-pitfalls" class="content-section">
+            <h2>⚠️ Common Pitfalls & How to Avoid Them</h2>
+            
+            <h3>1) Multiple Actions = Multiple Increments</h3>
+            <p>If you do:</p>
+            <div class="code-block">
+raw.foreach(bump_if_blank)
+raw.foreach(bump_if_blank)  # Oops, increments twice
+            </div>
+            <p>you'll double-count. Use a single pass, or new accumulators for each pass.</p>
+            
+            <h3>2) Task Retries</h3>
+            <p>If a partition fails, Spark retries it, and your accumulator may add again. This is rare in local dev but happens in clusters.</p>
+            
+            <h3>3) Reading Inside Executors</h3>
+            <p>Don't do this:</p>
+            <div class="code-block">
+raw.map(lambda line: blank_acc.value)  # executors reading value → not meaningful
+            </div>
+            <p>Only the driver's value after an action is the thing you want.</p>
+            
+            <h3>4) Exactness vs Convenience</h3>
+            <p>If you must have a 100% correct number for business logic, use a pure RDD transform (e.g., <code>filter(...).count()</code>). Accumulators are best for debugging/metrics.</p>
+            
+            <h3>5) "Resetting"</h3>
+            <p>You don't typically reset an accumulator—just create a new one for each logical run:</p>
+            <div class="code-block">
+blank_acc = sc.accumulator(0, "blank_run_1")
+# later…
+blank_acc = sc.accumulator(0, "blank_run_2")
+            </div>
+        </section>
+
+        <!-- Execution Plan -->
+        <section id="execution-plan" class="content-section">
+            <h2>📋 Step-by-Step "Execution Plan" (As in Your Syllabus)</h2>
+            
+            <h3>Step 1: Create the RDD</h3>
+            <div class="code-block">
+raw = sc.textFile("/data/TelecomData.csv")
+            </div>
+            
+            <h3>Step 2: Check partitions</h3>
+            <div class="code-block">
+print("Partitions:", raw.getNumPartitions())
+            </div>
+            
+            <h3>Step 3: Create & initialize accumulator</h3>
+            <div class="code-block">
+blankLinesCounter = sc.accumulator(0, "blank_lines")
+            </div>
+            
+            <h3>Step 4: Increment based on empty lines & print</h3>
+            <div class="code-block">
+raw.foreach(lambda line: blankLinesCounter.add(1) if (not line or not line.strip()) else None)
+print("Empty Lines:", blankLinesCounter.value)
+            </div>
+            
+            <h3>(Optional exact check)</h3>
+            <div class="code-block">
+print("Exact Empty Lines:", int(raw.map(lambda s: 1 if not s or not s.strip() else 0).sum()))
+            </div>
+        </section>
+
+        <!-- Mini Exercises -->
+        <section id="exercises" class="content-section">
+            <h2>💪 Mini Exercises (Your Turn)</h2>
+            
+            <div class="highlight-box">
+                <h4>Exercise 1: Exact vs Accumulator</h4>
+                <p>Use both methods on /data/TelecomData.csv.</p>
+                <p>Do they match? If not, think: did you run more than one action? Any task retries?</p>
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Exercise 2: Per-partition Update</h4>
+                <p>Re-implement the blank-count with mapPartitions that adds once per partition.</p>
+                <p>Compare values and think about performance benefits.</p>
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Exercise 3: Parse Quality Meter</h4>
+                <p>Wrap your parse_or_skip with two accumulators: bad_lines, kept_rows.</p>
+                <p>Run count() and print both. Then deliberately inject a malformed line (e.g., by parallelizing ["x,y"]) and confirm bad_lines increases.</p>
+            </div>
+            
+            <div class="highlight-box">
+                <h4>Exercise 4: Prove "No Action ⇒ No Update"</h4>
+                <p>Create an accumulator, update it inside a map, don't run an action, and print the value.</p>
+                <p>Then run .count() and print again.</p>
+            </div>
+        </section>
+
+        <!-- Why Accumulator -->
+        <section id="why-accumulator" class="content-section">
+            <h2>🤷 Why Accumulator When We Have Filter/Map/Count Functions?</h2>
+            
+            <div class="highlight-box success">
+                <h4>Short Answer:</h4>
+                <ul>
+                    <li>Use <strong>filter/map/count</strong> for exact results that drive your program's output.</li>
+                    <li>Use <strong>accumulators</strong> for side-channel metrics (debug/monitoring) that you want to piggy-back on work you're already doing — without another full pass over the data or creating extra RDDs.</li>
+                </ul>
+            </div>
+            
+            <h3>When Filter + Count is Perfect (and Preferred)</h3>
+            <p>You want an exact number, and you're okay doing a dedicated pass:</p>
+            
+            <div class="code-block">
+# exact count of blank lines (pure RDD logic)
+raw = sc.textFile("/data/TelecomData.csv")
+blank_count_exact = (raw
+    .filter(lambda line: not line or not line.strip())
+    .count())
+print("Exact blank lines:", blank_count_exact)
+            </div>
+            
+            <p>This is accurate and simple. Use it for business logic that must be correct.</p>
+            
+            <h3>When an Accumulator Helps More</h3>
+            
+            <h4>1) You want metrics "for free" during an existing pass</h4>
+            <p>Suppose you're already running an action to compute revenue on clean. You can also count malformed/blank/bad lines in the same pass (no extra scan).</p>
+            
+            <div class="code-block">
+# Accumulators for metrics
+bad_lines = sc.accumulator(0, "bad_lines")
+blank_lines = sc.accumulator(0, "blank_lines")
+kept_rows = sc.accumulator(0, "kept_rows")
+
+def parse_counting(line):
+    if not line or not line.strip():
+        blank_lines.add(1)
+        return []
+    p = line.split(",")
+    if len(p) < 10:
+        bad_lines.add(1)
+        return []
+    # (same parsing as your parse_or_skip)
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    def zfloat(s):
+        try: return float(s.strip())
+        except: return None
+    def norm(s):
+        return (s or "").strip().upper()
+    kept_rows.add(1)
+    return [(
+        p[0].strip(), p[1].strip(), norm(p[2]),
+        norm(p[3]) == "Y", norm(p[4]),
+        zint(p[5]), zint(p[6]), norm(p[7]),
+        zfloat(p[8]), norm(p[9]) == "Y"
+    )]
+
+raw = sc.textFile("/data/TelecomData.csv")
+clean_with_metrics = raw.flatMap(parse_counting)
+
+# any action on this lineage will also update the accumulators:
+total_rev = (clean_with_metrics
+             .filter(lambda r: r[4] == "POSTPAID")
+             .map(lambda r: r[8])
+             .filter(lambda x: x is not None and x >= 0)
+             .sum())
+
+print("Revenue:", total_rev)
+print("Kept:", kept_rows.value, "Bad:", bad_lines.value, "Blank:", blank_lines.value)
+            </div>
+            
+            <p>We didn't run a second pass just to count issues — the counters updated while doing the real work.</p>
+            
+            <h4>2) You want multiple cross-cutting counts in one pass</h4>
+            <p>Counting several "drop reasons" exactly with pure RDDs usually means several filters (and either multiple passes or heavy branching). With accumulators you can tally many categories while producing one cleaned RDD:</p>
+            
+            <div class="code-block">
+too_short = sc.accumulator(0, "too_short")
+bad_calls = sc.accumulator(0, "bad_calls")
+bad_sms   = sc.accumulator(0, "bad_sms")
+
+def parse_and_label(line):
+    p = line.split(",")
+    if len(p) < 10:
+        too_short.add(1); return []
+    def zint(s):
+        try: return int(s.strip())
+        except: return None
+    calls = zint(p[5]); sms = zint(p[6])
+    if calls is None: bad_calls.add(1)
+    if sms   is None: bad_sms.add(1)
+    # …build and return the row (possibly with None values), or skip, your choice
+    return [tuple(p)]  # simplified
+
+clean2 = raw.flatMap(parse_and_label)
+_ = clean2.count()  # one action → all three counters are filled
+
+print(too_short.value, bad_calls.value, bad_sms.value)
+            </div>
+            
+            <h4>3) You're counting things that don't exist as a nice RDD</h4>
+            <p>Some events aren't rows (e.g., caught exceptions, branch choices, cache hits). Accumulators can record those without manufacturing an RDD just to count them.</p>
+            
+            <h4>4) You want counts but don't want extra shuffles or storage</h4>
+            <p>filter/count is a separate transformation and action—on huge data that's another full scan (and maybe more lineage to maintain or persist). Accumulators let you observe while you compute something else.</p>
+        </section>
+
+        <!-- Key Caveats -->
+        <section class="content-section">
+            <h2>🔑 Key Caveats (So You Use Them Safely)</h2>
+            
+            <div class="highlight-box warning">
+                <ul>
+                    <li><strong>Best-effort, not business logic:</strong> accumulators can overcount if tasks retry. Use them for monitoring/debugging, not for numbers that must be exact. For must-be-correct results → use RDD filter/count (or compute from your output RDD).</li>
+                    <li><strong>Needs an action:</strong> no action ⇒ no updates. Put the add inside code that you know will run before an action completes.</li>
+                    <li><strong>Read only on the driver (after the action):</strong> Don't read .value inside executors.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Comparison -->
+        <section id="comparison" class="content-section">
+            <h2>⚖️ Side-by-Side: Exact vs Piggy-Back</h2>
+            
+            <h3>Two-pass exact (simple & correct):</h3>
+            <div class="code-block">
+raw = sc.textFile("/data/TelecomData.csv")
+blank_exact = raw.filter(lambda s: not s or not s.strip()).count()
+revenue = (clean   # assume you already built it
+           .filter(lambda r: r[4] == "POSTPAID")
+           .map(lambda r: r[8])
+           .filter(lambda x: x is not None and x >= 0)
+           .sum())
+            </div>
+            
+            <h3>One-pass metrics (faster when you're already scanning):</h3>
+            <div class="code-block">
+blank_acc = sc.accumulator(0, "blanks")
+
+def bump_if_blank(line):
+    if not line or not line.strip():
+        blank_acc.add(1)
+
+raw.foreach(bump_if_blank)  # or integrate inside your parse, then trigger with any action
+print("observed blanks (maybe inexact):", blank_acc.value)
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Choose based on your goal:</h4>
+                <ul>
+                    <li><strong>Need exact?</strong> Use RDD transforms.</li>
+                    <li><strong>Need cheap insights while doing other work?</strong> Accumulators.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Tiny Exercise -->
+        <section class="content-section">
+            <h2>🏃 Tiny Exercise (Feel the Difference)</h2>
+            
+            <div class="highlight-box">
+                <ol>
+                    <li>Compute postpaid revenue and blank-line count in two passes (exact).</li>
+                    <li>Modify your parser to increment blank_lines and bad_lines, then just run the revenue action — observe you also get the counters without a second pass.</li>
+                    <li>Deliberately force a task retry (easiest on a real cluster) to see why accumulators are "best-effort".</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="topic-navigation">
+            <a href="persistence.html" class="nav-link">
+                <span>←</span>
+                <span>Previous: Persistence & Caching</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span>Home</span>
+                <span>🏠</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+                <a href="shared-variables.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Shared Variables</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+        // Function to bypass password screen
+        function bypassPasswordScreen() {
+            if (passwordScreen) {
+                passwordScreen.style.display = 'none';
+            }
+            
+            // Always skip splash for returning users - go directly to main content
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Click to skip splash functionality
+        const splash = document.getElementById('welcomeSplash');
+        if (splash) {
+            splash.addEventListener('click', () => {
+                splash.classList.add('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.content-header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

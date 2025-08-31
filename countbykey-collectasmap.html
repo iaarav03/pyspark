@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>countByKey & collectAsMap - PySpark RDD Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <h1><a href="index.html" style="text-decoration: none; color: inherit;">🔥 PySpark Learning Hub</a></h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#countbykey">countByKey</a>
+                <a href="#collectasmap">collectAsMap</a>
+                <a href="#combined">Combined</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="content-header">
+        <div class="content-title">
+            <h1>🗝️ countByKey & collectAsMap Operations</h1>
+            <p>Master key-value pair operations - counting and collecting with comprehensive examples</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / countByKey & collectAsMap Operations
+        </div>
+    </div>
+
+    <main class="content-body">
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#introduction">🎯 Introduction</a></li>
+                <li><a href="#countbykey">🔢 countByKey Operation</a></li>
+                <li><a href="#collectasmap">🗺️ collectAsMap Operation</a></li>
+                <li><a href="#combined">🔄 Combining Both Operations</a></li>
+                <li><a href="#edge-cases">🚨 Edge Cases</a></li>
+                <li><a href="#performance">📊 Performance Comparison</a></li>
+                <li><a href="#exercises">🧪 Practice Exercises</a></li>
+            </ul>
+        </div>
+
+        <section id="introduction" class="content-section">
+            <h2>🎯 Introduction</h2>
+            <p>Think of these operations like organizing your toy collection:</p>
+            <ul>
+                <li><strong>countByKey</strong>: "How many toys do I have of each type?"</li>
+                <li><strong>collectAsMap</strong>: "Give me a dictionary/map of my key-value pairs"</li>
+            </ul>
+            
+            <div class="highlight-box">
+                <h4>🧸 Simple Analogy:</h4>
+                <p>Imagine you have a box of toys with labels:</p>
+                <ul>
+                    <li>("car", "red toy car")</li>
+                    <li>("car", "blue toy car")</li>
+                    <li>("plane", "fighter jet")</li>
+                    <li>("car", "green toy car")</li>
+                    <li>("boat", "sailing boat")</li>
+                </ul>
+                <p><strong>countByKey</strong> tells you: <code>car: 3, plane: 1, boat: 1</code></p>
+            </div>
+
+            <div class="highlight-box warning">
+                <h4>⚠️ Important:</h4>
+                <p>Both operations work with Key-Value RDDs! Your RDD must contain tuples like <code>(key, value)</code>.</p>
+            </div>
+        </section>
+
+        <section id="countbykey" class="content-section">
+            <h2>🔢 countByKey Operation</h2>
+
+            <h3>Basic countByKey Syntax</h3>
+            <div class="code-block">
+# RDD must be in (key, value) format
+key_value_rdd = sc.parallelize([("key1", "value1"), ("key2", "value2")])
+counts = key_value_rdd.countByKey()  # Returns a Python dictionary
+            </div>
+
+            <h3>🎯 Example 1: Basic countByKey with Toys</h3>
+            <div class="code-block">
+from pyspark import SparkContext
+sc = SparkContext.getOrCreate()
+
+# Create RDD of toys - (toy_type, toy_name)
+toys_rdd = sc.parallelize([
+    ("car", "red_ferrari"),
+    ("car", "blue_honda"), 
+    ("plane", "fighter_jet"),
+    ("car", "green_beetle"),
+    ("boat", "yacht"),
+    ("plane", "passenger_plane"),
+    ("boat", "speedboat")
+])
+
+# Count how many toys of each type
+toy_counts = toys_rdd.countByKey()
+
+print("Toy inventory:")
+for toy_type, count in toy_counts.items():
+    print(f"{toy_type}: {count} toys")
+
+# Output:
+# Toy inventory:
+# car: 3 toys
+# plane: 2 toys
+# boat: 2 toys
+            </div>
+
+            <h3>🎯 Example 2: Student Grades by Subject</h3>
+            <div class="code-block">
+# Student grades - (subject, student_name)
+grades_rdd = sc.parallelize([
+    ("Math", "Alice"),
+    ("Science", "Bob"),
+    ("Math", "Charlie"),
+    ("English", "Alice"),
+    ("Math", "David"),
+    ("Science", "Eve"),
+    ("English", "Bob"),
+    ("Math", "Frank")
+])
+
+# Count students per subject
+students_per_subject = grades_rdd.countByKey()
+
+print("Students enrolled in each subject:")
+for subject, count in students_per_subject.items():
+    print(f"{subject}: {count} students")
+
+# Output:
+# Students enrolled in each subject:
+# Math: 4 students
+# Science: 2 students
+# English: 2 students
+            </div>
+
+            <h3>🎯 Example 3: Website Traffic Analysis</h3>
+            <div class="code-block">
+# Web logs - (page, visitor_id)
+web_logs = sc.parallelize([
+    ("home", "user001"),
+    ("products", "user002"),
+    ("home", "user003"),
+    ("about", "user001"),
+    ("products", "user004"),
+    ("home", "user002"),
+    ("contact", "user005"),
+    ("products", "user001"),
+    ("home", "user006")
+])
+
+# Count visits per page
+page_visits = web_logs.countByKey()
+
+print("Page visit counts:")
+for page, visits in sorted(page_visits.items()):
+    print(f"/{page}: {visits} visits")
+
+# Output:
+# Page visit counts:
+# /about: 1 visits
+# /contact: 1 visits
+# /home: 4 visits
+# /products: 3 visits
+            </div>
+        </section>
+
+        <section id="collectasmap" class="content-section">
+            <h2>🗺️ collectAsMap Operation</h2>
+
+            <h3>What is collectAsMap?</h3>
+            <p>collectAsMap converts your key-value RDD into a Python dictionary. But <strong>IMPORTANT</strong>: If you have duplicate keys, only the <strong>last value</strong> for each key is kept!</p>
+
+            <div class="highlight-box warning">
+                <h4>📞 Phone Book Analogy:</h4>
+                <ul>
+                    <li>("Alice", "123-456")</li>
+                    <li>("Bob", "789-012")</li>
+                    <li>("Alice", "999-888") ← This overwrites Alice's first number</li>
+                </ul>
+                <p>Result: <code>{"Alice": "999-888", "Bob": "789-012"}</code></p>
+            </div>
+
+            <h3>Basic collectAsMap Syntax</h3>
+            <div class="code-block">
+# RDD must be in (key, value) format
+key_value_rdd = sc.parallelize([("key1", "value1"), ("key2", "value2")])
+dictionary = key_value_rdd.collectAsMap()  # Returns Python dict
+            </div>
+
+            <h3>🎯 Example 4: Basic collectAsMap</h3>
+            <div class="code-block">
+# Student ID to Name mapping
+student_mapping = sc.parallelize([
+    ("S001", "Alice"),
+    ("S002", "Bob"),
+    ("S003", "Charlie"),
+    ("S004", "David")
+])
+
+# Convert to dictionary
+student_dict = student_mapping.collectAsMap()
+
+print("Student Dictionary:", student_dict)
+print("Student S002:", student_dict["S002"])
+
+# You can now use it like a regular Python dictionary
+for student_id, name in student_dict.items():
+    print(f"ID: {student_id} -> Name: {name}")
+
+# Output:
+# Student Dictionary: {'S001': 'Alice', 'S002': 'Bob', 'S003': 'Charlie', 'S004': 'David'}
+# Student S002: Bob
+# ID: S001 -> Name: Alice
+# ID: S002 -> Name: Bob
+# ID: S003 -> Name: Charlie
+# ID: S004 -> Name: David
+            </div>
+
+            <h3>🎯 Example 5: Product Prices (Latest Price Wins)</h3>
+            <div class="code-block">
+# Product prices over time - (product_id, price)
+price_updates = sc.parallelize([
+    ("PROD001", 100.0),
+    ("PROD002", 250.0),
+    ("PROD001", 95.0),   # Price update for PROD001
+    ("PROD003", 50.0),
+    ("PROD002", 240.0),  # Price update for PROD002
+    ("PROD001", 90.0)    # Another update for PROD001
+])
+
+# Get latest prices (last value for each key)
+current_prices = price_updates.collectAsMap()
+
+print("Current Product Prices:")
+for product, price in current_prices.items():
+    print(f"{product}: ${price}")
+
+# Output:
+# Current Product Prices:
+# PROD001: $90.0
+# PROD002: $240.0
+# PROD003: $50.0
+            </div>
+
+            <div class="highlight-box">
+                <h4>🔍 Notice:</h4>
+                <p>PROD001 had prices 100.0, 95.0, and 90.0, but only the last one (90.0) is kept!</p>
+            </div>
+
+            <h3>🎯 Example 6: Using Your Telecom Data</h3>
+            <div class="code-block">
+# Load your telecom data
+telecom_rdd = sc.textFile("/data/TelecomData.csv")
+
+# Skip header
+header = telecom_rdd.first()
+data_rdd = telecom_rdd.filter(lambda line: line != header)
+
+# Extract customer state and count customers per state
+# Assuming state is in column 4 (adjust based on your data structure)
+state_customer_pairs = data_rdd.map(lambda line: (line.split(",")[3].strip(), 1))
+
+# Count customers per state
+customers_per_state = state_customer_pairs.countByKey()
+
+print("Customers per state:")
+for state, count in sorted(customers_per_state.items()):
+    print(f"{state}: {count} customers")
+
+# Create state to region mapping (example)
+state_regions = sc.parallelize([
+    ("CA", "West"),
+    ("NY", "East"), 
+    ("TX", "South"),
+    ("FL", "South"),
+    ("WA", "West")
+])
+
+# Convert to dictionary for easy lookup
+region_lookup = state_regions.collectAsMap()
+print("\nState to Region mapping:", region_lookup)
+            </div>
+        </section>
+
+        <section id="combined" class="content-section">
+            <h2>🔄 Combining countByKey and collectAsMap</h2>
+            <p>Here's a powerful pattern - using both together:</p>
+
+            <h3>🎯 Example 7: Sales Analysis</h3>
+            <div class="code-block">
+# Sales data - (salesperson, sale_amount)
+sales_data = sc.parallelize([
+    ("Alice", 1000),
+    ("Bob", 1500),
+    ("Alice", 2000),
+    ("Charlie", 800),
+    ("Bob", 1200),
+    ("Alice", 1800),
+    ("Charlie", 1100)
+])
+
+# Count number of sales per person
+sales_count = sales_data.countByKey()
+print("Number of sales per person:")
+for person, count in sales_count.items():
+    print(f"{person}: {count} sales")
+
+# Get total sales per person using reduceByKey then collectAsMap
+total_sales_rdd = sales_data.reduceByKey(lambda x, y: x + y)
+total_sales_dict = total_sales_rdd.collectAsMap()
+
+print("\nTotal sales per person:")
+for person, total in total_sales_dict.items():
+    print(f"{person}: ${total}")
+
+# Combine the information
+print("\nComplete sales report:")
+for person in sales_count.keys():
+    count = sales_count[person]
+    total = total_sales_dict[person]
+    average = total / count
+    print(f"{person}: {count} sales, ${total} total, ${average:.2f} average")
+            </div>
+
+            <h3>🎯 Real-World Example: E-commerce Analytics</h3>
+            <div class="code-block">
+# E-commerce transaction data
+transactions = sc.parallelize([
+    ("electronics", 599.99),
+    ("books", 29.99),
+    ("electronics", 799.99),
+    ("clothing", 89.99),
+    ("books", 19.99),
+    ("electronics", 299.99),
+    ("clothing", 129.99),
+    ("books", 39.99),
+    ("home", 149.99),
+    ("electronics", 1299.99)
+])
+
+# Analysis 1: Count transactions per category
+transactions_per_category = transactions.countByKey()
+print("Transactions per category:")
+for category, count in sorted(transactions_per_category.items()):
+    print(f"{category}: {count} transactions")
+
+# Analysis 2: Total revenue per category
+revenue_per_category = transactions.reduceByKey(lambda x, y: x + y).collectAsMap()
+print("\nRevenue per category:")
+for category, revenue in sorted(revenue_per_category.items()):
+    print(f"{category}: ${revenue:.2f}")
+
+# Analysis 3: Average transaction value per category
+print("\nAverage transaction value:")
+for category in transactions_per_category.keys():
+    count = transactions_per_category[category]
+    total_revenue = revenue_per_category[category]
+    average = total_revenue / count
+    print(f"{category}: ${average:.2f}")
+            </div>
+        </section>
+
+        <section id="edge-cases" class="content-section">
+            <h2>🚨 Edge Cases and Important Things to Remember</h2>
+
+            <h3>Edge Case 1: Empty RDDs</h3>
+            <div class="code-block">
+# What happens with empty RDDs?
+empty_rdd = sc.parallelize([])
+
+# countByKey on empty RDD
+empty_count = empty_rdd.countByKey()
+print("Empty countByKey:", empty_count)  # Returns empty dict {}
+
+# collectAsMap on empty RDD  
+empty_map = empty_rdd.collectAsMap()
+print("Empty collectAsMap:", empty_map)  # Returns empty dict {}
+            </div>
+
+            <h3>Edge Case 2: Single Key-Value Pair</h3>
+            <div class="code-block">
+single_pair = sc.parallelize([("onlykey", "onlyvalue")])
+
+count_result = single_pair.countByKey()
+map_result = single_pair.collectAsMap()
+
+print("Single pair count:", count_result)  # {'onlykey': 1}
+print("Single pair map:", map_result)      # {'onlykey': 'onlyvalue'}
+            </div>
+
+            <h3>Edge Case 3: Duplicate Keys in collectAsMap</h3>
+            <div class="code-block">
+# This is VERY important to understand!
+duplicate_keys = sc.parallelize([
+    ("user1", "first_login"),
+    ("user2", "active"),
+    ("user1", "second_login"),  # This will overwrite!
+    ("user1", "third_login")    # This will be the final value!
+])
+
+# Only last value per key is kept
+final_status = duplicate_keys.collectAsMap()
+print("Final status (last value wins):", final_status)
+# Output: {'user1': 'third_login', 'user2': 'active'}
+
+# If you want to keep all values, use groupByKey instead
+all_values = duplicate_keys.groupByKey().mapValues(list).collectAsMap()
+print("All values per key:", all_values)
+# Output: {'user1': ['first_login', 'second_login', 'third_login'], 'user2': ['active']}
+            </div>
+
+            <div class="highlight-box error">
+                <h4>⚠️ Critical Warning:</h4>
+                <p>collectAsMap only keeps the <strong>last value</strong> for duplicate keys. If you need all values, use <code>groupByKey()</code> instead!</p>
+            </div>
+
+            <h3>Edge Case 4: Wrong Data Format</h3>
+            <div class="code-block">
+# These will cause errors!
+try:
+    # RDD without key-value pairs
+    wrong_rdd = sc.parallelize([1, 2, 3, 4, 5])
+    wrong_count = wrong_rdd.countByKey()  # ERROR!
+except Exception as e:
+    print("Error with non-key-value RDD:", str(e))
+
+try:
+    # RDD with tuples of wrong size
+    wrong_tuples = sc.parallelize([("key1",), ("key2", "val2", "extra")])
+    wrong_map = wrong_tuples.collectAsMap()  # May cause issues
+except Exception as e:
+    print("Error with wrong tuple size:", str(e))
+            </div>
+        </section>
+
+        <section id="performance" class="content-section">
+            <h2>📊 Performance Comparison</h2>
+
+            <h3>Performance Tip: countByKey vs groupByKey + count</h3>
+            <div class="code-block">
+# Performance tip: countByKey vs groupByKey + count
+import time
+
+# Large dataset for testing
+large_data = sc.parallelize([("key" + str(i % 100), i) for i in range(100000)])
+
+# Method 1: countByKey (Recommended)
+start_time = time.time()
+count_result1 = large_data.countByKey()
+time1 = time.time() - start_time
+
+# Method 2: groupByKey + manual counting (Not recommended)
+start_time = time.time()
+count_result2 = large_data.groupByKey().mapValues(len).collectAsMap()
+time2 = time.time() - start_time
+
+print(f"countByKey time: {time1:.4f} seconds")
+print(f"groupByKey + count time: {time2:.4f} seconds")
+print(f"countByKey is {time2/time1:.2f}x faster!")
+            </div>
+
+            <div class="highlight-box">
+                <h4>📊 Summary Table:</h4>
+                <table>
+                    <tr>
+                        <th>Operation</th>
+                        <th>Input</th>
+                        <th>Output</th>
+                        <th>Use Case</th>
+                        <th>Performance</th>
+                    </tr>
+                    <tr>
+                        <td><strong>countByKey</strong></td>
+                        <td>RDD[(K,V)]</td>
+                        <td>Dict[K, Int]</td>
+                        <td>Count occurrences of each key</td>
+                        <td>Fast - uses combiners</td>
+                    </tr>
+                    <tr>
+                        <td><strong>collectAsMap</strong></td>
+                        <td>RDD[(K,V)]</td>
+                        <td>Dict[K, V]</td>
+                        <td>Convert to dictionary (last value wins)</td>
+                        <td>Fast - simple collection</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Key Differences:</h3>
+            <ul>
+                <li><strong>countByKey</strong>: Counts how many values each key has</li>
+                <li><strong>collectAsMap</strong>: Gives you the actual key-value pairs as a dictionary</li>
+            </ul>
+
+            <h3>When to Use What:</h3>
+            <ul>
+                <li>Use <strong>countByKey</strong> when you want to know "how many?"</li>
+                <li>Use <strong>collectAsMap</strong> when you want to create a lookup dictionary</li>
+                <li>Be careful with <strong>collectAsMap</strong> and duplicate keys - only last value is kept!</li>
+            </ul>
+
+            <div class="highlight-box warning">
+                <h4>⚠️ Memory Warning:</h4>
+                <p>Both operations collect results to the driver program. Don't use them on huge datasets that won't fit in driver memory!</p>
+            </div>
+        </section>
+
+        <section id="exercises" class="content-section">
+            <h2>🧪 Practice Exercises</h2>
+            <p>Try these in your Docker PySpark environment:</p>
+
+            <h3>Exercise 1: Word Count</h3>
+            <div class="code-block">
+text_rdd = sc.parallelize([
+    "hello world",
+    "hello spark", 
+    "world of spark",
+    "hello world of big data"
+])
+
+# Your tasks:
+# 1. Split each line into words
+# 2. Create (word, 1) pairs  
+# 3. Use countByKey to count word frequencies
+# 4. Which word appears most frequently?
+            </div>
+
+            <h3>Exercise 2: Grade Analysis</h3>
+            <div class="code-block">
+grades = sc.parallelize([
+    ("Math", "A"),
+    ("Science", "B"),
+    ("Math", "B"),
+    ("English", "A"),
+    ("Science", "A"),
+    ("Math", "C"),
+    ("English", "B")
+])
+
+# Your tasks:
+# 1. Count grades per subject
+# 2. Create a grade point mapping (A=4, B=3, C=2) using collectAsMap
+# 3. Calculate average GPA per subject
+            </div>
+
+            <h3>Exercise 3: Customer Analysis with your telecom data</h3>
+            <div class="code-block">
+# 1. Extract customer state and monthly charges
+# 2. Count customers per state
+# 3. Find average monthly charge per state
+# 4. Which state has the highest average charges?
+            </div>
+
+            <div class="highlight-box success">
+                <h4>🎯 Key Takeaways:</h4>
+                <ol>
+                    <li><strong>countByKey</strong>: Counts how many values each key has</li>
+                    <li><strong>collectAsMap</strong>: Gives you the actual key-value pairs as a dictionary</li>
+                    <li>Be careful with <strong>collectAsMap</strong> and duplicate keys - only last value is kept!</li>
+                    <li>Both operations collect results to driver - watch memory usage!</li>
+                    <li>Use <strong>countByKey</strong> for "how many?" and <strong>collectAsMap</strong> for lookup dictionaries</li>
+                </ol>
+            </div>
+        </section>
+
+        <div class="topic-navigation">
+            <a href="union-distinct.html" class="nav-link">← Previous: Union & Distinct</a>
+            <a href="basic.html" class="nav-link">Next: Back to Basics →</a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="countbykey-collectasmap.html" class="nav-link">
+                    <span class="nav-icon">🗝️</span>
+                    <span class="nav-text">countByKey & collectAsMap</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. Created with ❤️ by Aarav for learning purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>
