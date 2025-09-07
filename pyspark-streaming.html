@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Streaming - Complete Guide</title>
+    <link rel="stylesheet" href="pyspark-streaming-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                
+                <i class="fas fa-stream"></i>
+                <span>PySpark Streaming Guide</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="why-pyspark-streaming.html" class="nav-link">Why PySpark?</a></li>
+                <li><a href="what-is-pyspark-streaming.html" class="nav-link">What is PySpark?</a></li>
+                <li><a href="features.html" class="nav-link">Features</a></li>
+                <li><a href="micro-batch-processing.html" class="nav-link">Micro-batch</a></li>
+                <li><a href="sources-and-sinks.html" class="nav-link">Sources & Sinks</a></li>
+                <li><a href="stream-applications.html" class="nav-link">Stream Apps</a></li>
+                <li><a href="structured-streaming.html" class="nav-link">Structured Streaming</a></li>
+                <li><a href="kafka-integration.html" class="nav-link">Kafka Integration</a></li>
+                <li><a href="window-operations.html" class="nav-link">Window Operations</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <i class="fas fa-bolt"></i>
+                    PySpark Streaming
+                    <span class="subtitle">Complete Beginner's Guide</span>
+                </h1>
+                <p class="hero-description">
+                    Learn PySpark Streaming from scratch with easy explanations, detailed examples, 
+                    and practical insights. Perfect for beginners who want to master real-time data processing.
+                </p>
+                <div class="hero-buttons">
+                    <a href="why-pyspark-streaming.html" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        Start Learning
+                    </a>
+                    <a href="#overview" class="btn btn-secondary">
+                        <i class="fas fa-info-circle"></i>
+                        Overview
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <section id="overview" class="section">
+            <div class="container">
+                <h2 class="section-title">What You'll Learn</h2>
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <h3>Why PySpark Streaming?</h3>
+                        <p>Understand the need for real-time data processing and how PySpark Streaming solves business problems with immediate insights.</p>
+                        <a href="why-pyspark-streaming.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <h3>What is PySpark Streaming?</h3>
+                        <p>Explore the architecture, high-level view, and how PySpark Streaming processes data from multiple sources to various sinks.</p>
+                        <a href="what-is-pyspark-streaming.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h3>Key Features</h3>
+                        <p>Discover powerful features like fault-tolerance, exactly-once semantics, event-time processing, and ML integration.</p>
+                        <a href="features.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-cubes"></i>
+                        </div>
+                        <h3>Micro-batch Processing</h3>
+                        <p>Learn how PySpark uses micro-batch processing, DStreams, receivers, and the complete streaming workflow.</p>
+                        <a href="micro-batch-processing.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <h3>Sources & Sinks</h3>
+                        <p>Explore various data sources (Kafka, Files, Flume) and output sinks (Databases, Dashboards, Files) with practical examples.</p>
+                        <a href="sources-and-sinks.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3>Stream Applications</h3>
+                        <p>Learn to create real streaming applications with hands-on examples including Word Count and HDFS file processing.</p>
+                        <a href="stream-applications.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <h3>Structured Streaming</h3>
+                        <p>Master the modern DataFrame-based approach with output modes, schema definition, and SQL-like operations.</p>
+                        <a href="structured-streaming.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <h3>Kafka Integration</h3>
+                        <p>Connect PySpark Streaming with Apache Kafka for real-time data processing with practical setup and examples.</p>
+                        <a href="kafka-integration.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-window-maximize"></i>
+                        </div>
+                        <h3>Window Operations</h3>
+                        <p>Understand time-based analytics with sliding, tumbling, and session windows for advanced streaming patterns.</p>
+                        <a href="window-operations.html" class="card-link">Learn More <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features-preview section">
+            <div class="container">
+                <h2 class="section-title">Why This Guide?</h2>
+                <div class="features-list">
+                    <div class="feature-item">
+                        <i class="fas fa-graduation-cap"></i>
+                        <div>
+                            <h4>Beginner-Friendly</h4>
+                            <p>Everything explained in simple terms with real-world analogies and examples</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-code"></i>
+                        <div>
+                            <h4>Practical Examples</h4>
+                            <p>Code examples with proper formatting and detailed explanations</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-chart-line"></i>
+                        <div>
+                            <h4>Visual Learning</h4>
+                            <p>Diagrams, illustrations, and step-by-step breakdowns</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                        <div>
+                            <h4>Scalable Structure</h4>
+                            <p>Organized website structure that can grow with more content</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>PySpark Streaming Guide</h4>
+                    <p>A comprehensive beginner's guide to learning PySpark Streaming with detailed explanations and practical examples.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Core Concepts</h4>
+                    <ul>
+                        <li><a href="why-pyspark-streaming.html">Why PySpark Streaming?</a></li>
+                        <li><a href="what-is-pyspark-streaming.html">What is PySpark Streaming?</a></li>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="micro-batch-processing.html">Micro-batch Processing</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Practical Guides</h4>
+                    <ul>
+                        <li><a href="stream-applications.html">Stream Applications</a></li>
+                        <li><a href="structured-streaming.html">Structured Streaming</a></li>
+                        <li><a href="kafka-integration.html">Kafka Integration</a></li>
+                        <li><a href="window-operations.html">Window Operations</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Topics Covered</h4>
+                    <ul>
+                        <li>Real-time Data Processing</li>
+                        <li>DStreams and RDDs</li>
+                        <li>Sources and Sinks</li>
+                        <li>Fault Tolerance</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 PySpark Streaming Guide. Educational content for learning purposes.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile navigation toggle
+        const hamburger = document.querySelector('.hamburger');
+        const navMenu = document.querySelector('.nav-menu');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+            hamburger.classList.remove('active');
+            navMenu.classList.remove('active');
+        }));
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

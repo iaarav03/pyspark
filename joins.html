@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark DataFrame Joins - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="content-header">
+        <div class="content-title">
+            <h1>🔗 PySpark DataFrame Joins</h1>
+            <p>Master all types of joins with practical examples, aliases, and advanced patterns</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="#joins">DataFrame Joins</a>
+        </div>
+    </header>
+
+    <main class="content-body">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#what-is-join">What is a Join?</a></li>
+                <li><a href="#join-types">Types of Joins</a></li>
+                <li><a href="#basic-syntax">Basic Join Syntax</a></li>
+                <li><a href="#aliases-col">Using Aliases and col()</a></li>
+                <li><a href="#practice-datasets">Practice Datasets</a></li>
+                <li><a href="#beginner-questions">Beginner Questions (1-5)</a></li>
+                <li><a href="#intermediate-questions">Intermediate Questions (6-10)</a></li>
+                <li><a href="#advanced-questions">Advanced Questions (11-15)</a></li>
+                <li><a href="#solutions">Complete Solutions</a></li>
+                <li><a href="#common-mistakes">Common Mistakes</a></li>
+                <li><a href="#performance-tips">Performance Tips</a></li>
+            </ul>
+        </div>
+
+        <!-- What is Join -->
+        <section id="what-is-join" class="content-section">
+            <h2>🔍 What is a Join?</h2>
+            
+            <div class="highlight-box success">
+                <p>A <strong>join</strong> combines rows from two DataFrames based on a related column between them.</p>
+                <p>Think of it like connecting two Excel sheets using a common column.</p>
+            </div>
+            
+            <h3>Real-World Example:</h3>
+            <ul>
+                <li><strong>DataFrame 1:</strong> Customer orders (customer_id, order_amount)</li>
+                <li><strong>DataFrame 2:</strong> Customer details (customer_id, customer_name, city)</li>
+                <li><strong>Join them:</strong> Get order_amount + customer_name + city together</li>
+            </ul>
+        </section>
+
+        <!-- Join Types -->
+        <section id="join-types" class="content-section">
+            <h2>🎯 Types of Joins</h2>
+            
+            <div class="highlight-box">
+                <h4>🔥 CRITICAL: Join Type is Optional</h4>
+                <p>If you DON'T specify a join type, PySpark defaults to <strong>INNER JOIN</strong>.</p>
+                <div class="code-block">
+# These are IDENTICAL - both do INNER JOIN
+df1.join(df2, "customer_id")                    # No join type specified
+df1.join(df2, "customer_id", "inner")           # Explicitly specified
+                </div>
+            </div>
+            
+            <h3>1. INNER JOIN (Default)</h3>
+            <div class="highlight-box success">
+                <p><strong>What it does:</strong> Only returns rows where the join condition is met in BOTH DataFrames.</p>
+                <div class="code-block">
+# Method 1: Using join() with condition
+inner_join = orders_df.join(customers_df, "customer_id", "inner")
+
+# Method 2: Explicit condition  
+inner_join2 = orders_df.join(customers_df, 
+    orders_df.customer_id == customers_df.customer_id, "inner")
+                </div>
+            </div>
+            
+            <h3>2. LEFT JOIN (LEFT OUTER)</h3>
+            <div class="highlight-box success">
+                <p><strong>What it does:</strong> Returns ALL rows from LEFT DataFrame + matching rows from RIGHT DataFrame.</p>
+                <div class="code-block">
+# All orders + customer details (where available)
+left_join = orders_df.join(customers_df, "customer_id", "left")
+                </div>
+            </div>
+            
+            <h3>3. RIGHT JOIN (RIGHT OUTER)</h3>
+            <div class="highlight-box success">
+                <p><strong>What it does:</strong> Returns ALL rows from RIGHT DataFrame + matching rows from LEFT DataFrame.</p>
+                <div class="code-block">
+# All customers + their orders (where available)
+right_join = orders_df.join(customers_df, "customer_id", "right")
+                </div>
+            </div>
+            
+            <h3>4. FULL OUTER JOIN</h3>
+            <div class="highlight-box success">
+                <p><strong>What it does:</strong> Returns ALL rows from BOTH DataFrames.</p>
+                <div class="code-block">
+# Everything from both tables
+full_join = orders_df.join(customers_df, "customer_id", "full_outer")
+                </div>
+            </div>
+        </section>
+
+        <!-- Basic Syntax -->
+        <section id="basic-syntax" class="content-section">
+            <h2>📝 Basic Join Syntax Patterns</h2>
+            
+            <h3>Pattern 1: Simple Column Name (Recommended)</h3>
+            <div class="code-block">
+# When both DataFrames have the same column name
+df1.join(df2, "common_column", "join_type")
+            </div>
+            
+            <h3>Pattern 2: Explicit Condition</h3>
+            <div class="code-block">
+# When you need more control
+df1.join(df2, df1.column1 == df2.column2, "join_type")
+            </div>
+            
+            <h3>Pattern 3: Multiple Conditions</h3>
+            <div class="code-block">
+# Multiple join conditions
+df1.join(df2, 
+    (df1.col1 == df2.col1) & (df1.col2 == df2.col2), 
+    "join_type")
+            </div>
+        </section>
+
+        <!-- Aliases and col() -->
+        <section id="aliases-col" class="content-section">
+            <h2>🔑 Using Aliases and col() - VERY IMPORTANT!</h2>
+            
+            <div class="highlight-box error">
+                <h4>🚨 Critical Concept: When to Use col() with Aliases</h4>
+                <p>When joining DataFrames with aliases, you MUST use <code>col()</code> to reference columns properly.</p>
+            </div>
+            
+            <h3>Why Aliases Matter</h3>
+            <div class="code-block">
+# Problem: Both DataFrames have same column names
+students_df.join(students_df, ...)  # Which student_id? Ambiguous!
+            </div>
+            
+            <h3>Solution: Use Aliases with col()</h3>
+            <div class="code-block">
+from pyspark.sql.functions import col
+
+# ✅ CORRECT: Self-join with aliases and col()
+students_df.alias("s1").join(
+    students_df.alias("s2"), 
+    (col("s1.major") == col("s2.major")) & 
+    (col("s1.student_id") != col("s2.student_id"))
+).show()
+            </div>
+            
+            <h3>Advanced Alias Examples</h3>
+            
+            <h4>Self Join - Same Major Students</h4>
+            <div class="code-block">
+# Find pairs of students in same major but different IDs
+same_major = students_df.alias("s1").join(
+    students_df.alias("s2"),
+    (col("s1.major") == col("s2.major")) & 
+    (col("s1.student_id") != col("s2.student_id"))
+).select(
+    col("s1.name").alias("student1"),
+    col("s2.name").alias("student2"), 
+    col("s1.major")
+)
+same_major.show()
+            </div>
+            
+            <h4>Complex Multi-Table Join with Aliases</h4>
+            <div class="code-block">
+# Join multiple tables with aliases for clarity
+complete_report = enrollments_df.alias("e") \
+    .join(students_df.alias("s"), col("e.student_id") == col("s.student_id")) \
+    .join(courses_df.alias("c"), col("e.course_id") == col("c.course_id")) \
+    .select(
+        col("s.name").alias("student_name"),
+        col("c.course_name"), 
+        col("c.instructor"),
+        col("e.grade")
+    )
+complete_report.show()
+            </div>
+            
+            <div class="highlight-box warning">
+                <h4>⚠️ Common Mistake: Not Using col() with Aliases</h4>
+                <div class="code-block">
+# ❌ WRONG - This will fail
+students_df.alias("s1").join(
+    students_df.alias("s2"),
+    s1.major == s2.major  # Error: s1, s2 not defined
+)
+
+# ✅ CORRECT - Use col()
+students_df.alias("s1").join(
+    students_df.alias("s2"),
+    col("s1.major") == col("s2.major")  # Works perfectly
+)
+                </div>
+            </div>
+        </section>
+
+        <!-- Practice Datasets -->
+        <section id="practice-datasets" class="content-section">
+            <h2>📊 Practice Datasets</h2>
+            
+            <div class="code-block">
+from pyspark.sql import SparkSession, Row
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+
+# Your SparkSession
+spark = spark if 'spark' in globals() else SparkSession.builder.appName("Join-Practice").getOrCreate()
+
+# Dataset 1: Students
+students_data = [
+    ("S001", "Alice", 20, "Computer Science"),
+    ("S002", "Bob", 22, "Mathematics"),
+    ("S003", "Carol", 21, "Physics"),
+    ("S004", "David", 23, "Computer Science"),
+    ("S005", "Eva", 19, "Mathematics")
+]
+students_df = spark.createDataFrame(students_data, 
+    ["student_id", "name", "age", "major"])
+
+# Dataset 2: Enrollments
+enrollments_data = [
+    ("S001", "CS101", "A"),
+    ("S001", "MATH201", "B"),
+    ("S002", "MATH101", "A"),
+    ("S002", "MATH201", "A"),
+    ("S003", "PHY101", "B"),
+    ("S006", "CS101", "A"),    # Student doesn't exist in students table
+    ("S004", "CS101", "A"),
+    ("S004", "CS201", "B")
+]
+enrollments_df = spark.createDataFrame(enrollments_data, 
+    ["student_id", "course_id", "grade"])
+
+# Dataset 3: Courses
+courses_data = [
+    ("CS101", "Introduction to Programming", 3, "Dr. Smith"),
+    ("CS201", "Data Structures", 4, "Dr. Johnson"),
+    ("MATH101", "Calculus I", 4, "Dr. Brown"),
+    ("MATH201", "Statistics", 3, "Dr. Davis"),
+    ("PHY101", "Physics I", 4, "Dr. Wilson"),
+    ("ENG101", "English Literature", 3, "Dr. Taylor")  # No enrollments
+]
+courses_df = spark.createDataFrame(courses_data, 
+    ["course_id", "course_name", "credits", "instructor"])
+
+# Dataset 4: Departments
+departments_data = [
+    ("Computer Science", "Engineering", "Dr. Anderson"),
+    ("Mathematics", "Sciences", "Dr. Clark"),
+    ("Physics", "Sciences", "Dr. White"),
+    ("Chemistry", "Sciences", "Dr. Green")  # No students
+]
+departments_df = spark.createDataFrame(departments_data, 
+    ["major", "college", "head"])
+
+# Display all datasets
+print("=== STUDENTS ===")
+students_df.show()
+print("=== ENROLLMENTS ===") 
+enrollments_df.show()
+print("=== COURSES ===")
+courses_df.show()
+print("=== DEPARTMENTS ===")
+departments_df.show()
+            </div>
+        </section>
+
+        <!-- Beginner Questions -->
+        <section id="beginner-questions" class="content-section">
+            <h2>🌟 BEGINNER LEVEL QUESTIONS (1-5)</h2>
+            
+            <div class="qa-section">
+                <h4>Q1. Inner Join Basics</h4>
+                <p><strong>Question:</strong> Show student names with their grades. Only include students who have enrollments.</p>
+                <div class="code-block">
+# Your solution here:
+# students_df.join(enrollments_df, ?, ?)
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q2. Left Join Practice</h4>
+                <p><strong>Question:</strong> Show ALL students and their enrollments (if any). Students without enrollments should still appear.</p>
+                <div class="code-block">
+# Your solution here:
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q3. Right Join Understanding</h4>
+                <p><strong>Question:</strong> Show ALL enrollments with student information (if available). Include enrollments even if student doesn't exist.</p>
+                <div class="code-block">
+# Your solution here:
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q4. Course Information</h4>
+                <p><strong>Question:</strong> Show all enrollments with complete course details (course name, credits, instructor).</p>
+                <div class="code-block">
+# Your solution here:
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q5. Department Heads</h4>
+                <p><strong>Question:</strong> Show all students with their department head information.</p>
+                <div class="code-block">
+# Your solution here:
+                </div>
+            </div>
+        </section>
+
+        <!-- Intermediate Questions -->
+        <section id="intermediate-questions" class="content-section">
+            <h2>🔥 INTERMEDIATE LEVEL QUESTIONS (6-10)</h2>
+            
+            <div class="qa-section">
+                <h4>Q6. Triple Join</h4>
+                <p><strong>Question:</strong> Create a complete academic report: student name, course name, grade, and instructor for all enrollments.</p>
+                <div class="code-block">
+# Hint: You'll need to join 3 tables
+# enrollments -> students -> courses
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q7. Students Without Enrollments</h4>
+                <p><strong>Question:</strong> Find students who haven't enrolled in any courses.</p>
+                <div class="code-block">
+# Hint: Use left join and filter for NULL values
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q8. Courses Without Students</h4>
+                <p><strong>Question:</strong> Find courses that have no enrollments.</p>
+                <div class="code-block">
+# Hint: Use right join or left join (depending on table order)
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q9. Department Statistics</h4>
+                <p><strong>Question:</strong> Show each department with the count of students and their average age.</p>
+                <div class="code-block">
+# Hint: Join students with departments, then group by department
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q10. Grade Analysis</h4>
+                <p><strong>Question:</strong> Show average grade by course (convert letter grades to numbers: A=4, B=3, C=2, D=1).</p>
+                <div class="code-block">
+# Hint: Use when().otherwise() to convert grades, then join with course info
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Questions -->
+        <section id="advanced-questions" class="content-section">
+            <h2>🚀 ADVANCED LEVEL QUESTIONS (11-15)</h2>
+            
+            <div class="qa-section">
+                <h4>Q11. Self Join - Same Major Students</h4>
+                <p><strong>Question:</strong> Find pairs of students who are in the same major but different ages.</p>
+                <div class="code-block">
+# Hint: Join students table with itself using aliases and col()
+# students_df.alias("s1").join(students_df.alias("s2"), ...)
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q12. Complex Filtering with Joins</h4>
+                <p><strong>Question:</strong> Show students who are enrolled in Computer Science courses but are not Computer Science majors.</p>
+                <div class="code-block">
+# Hint: Join multiple tables and use complex WHERE conditions
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q13. Full Outer Join Analysis</h4>
+                <p><strong>Question:</strong> Create a complete view showing ALL students, ALL courses, and enrollment status.</p>
+                <div class="code-block">
+# Hint: Use full outer join and handle NULLs appropriately
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q14. Conditional Joins</h4>
+                <p><strong>Question:</strong> Show students with their course load (number of courses) but only for students taking more than 1 course.</p>
+                <div class="code-block">
+# Hint: Group first, then join with student details
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q15. Multi-Condition Joins</h4>
+                <p><strong>Question:</strong> Create a report showing students, their courses, but only include:</p>
+                <ul>
+                    <li>Computer Science or Mathematics majors</li>
+                    <li>Courses with 3+ credits</li>
+                    <li>Students age 20 or above</li>
+                </ul>
+                <div class="code-block">
+# Hint: Multiple join conditions and filters
+                </div>
+            </div>
+        </section>
+
+        <!-- Solutions -->
+        <section id="solutions" class="content-section">
+            <h2>✅ Complete Solutions</h2>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q1: Inner Join Basics</h4>
+                <div class="code-block">
+students_df.join(enrollments_df, "student_id", "inner").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q2: Left Join Practice</h4>
+                <div class="code-block">
+students_df.join(enrollments_df, "student_id", "left").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q3: Right Join Understanding</h4>
+                <div class="code-block">
+enrollments_df.join(students_df, "student_id", "right").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q4: Course Information</h4>
+                <div class="code-block">
+enrollments_df.join(courses_df, "course_id", "inner").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q5: Department Heads</h4>
+                <div class="code-block">
+students_df.join(departments_df, "major", "inner").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q6: Triple Join</h4>
+                <div class="code-block">
+enrollments_df \
+    .join(students_df, "student_id", "inner") \
+    .join(courses_df, "course_id", "inner") \
+    .select("name", "course_name", "grade", "instructor") \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q7: Students Without Enrollments</h4>
+                <div class="code-block">
+students_df.join(enrollments_df, "student_id", "left") \
+    .filter(col("course_id").isNull()) \
+    .select("student_id", "name", "major") \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q8: Courses Without Students</h4>
+                <div class="code-block">
+courses_df.join(enrollments_df, "course_id", "left") \
+    .filter(col("student_id").isNull()) \
+    .select("course_id", "course_name", "instructor") \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q9: Department Statistics</h4>
+                <div class="code-block">
+students_df.join(departments_df, "major", "inner") \
+    .groupBy("major", "college", "head") \
+    .agg(
+        count("student_id").alias("student_count"),
+        avg("age").alias("avg_age")
+    ) \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q10: Grade Analysis</h4>
+                <div class="code-block">
+grade_points = enrollments_df.withColumn("points", 
+    when(col("grade") == "A", 4)
+    .when(col("grade") == "B", 3)
+    .when(col("grade") == "C", 2)
+    .when(col("grade") == "D", 1)
+    .otherwise(0))
+
+grade_points.join(courses_df, "course_id", "inner") \
+    .groupBy("course_id", "course_name") \
+    .agg(avg("points").alias("avg_grade")) \
+    .orderBy(desc("avg_grade")) \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q11: Self Join - Same Major Students (WITH ALIASES AND col())</h4>
+                <div class="code-block">
+students_df.alias("s1").join(
+    students_df.alias("s2"), 
+    (col("s1.major") == col("s2.major")) & 
+    (col("s1.student_id") != col("s2.student_id")) &
+    (col("s1.age") != col("s2.age"))
+).select(
+    col("s1.name").alias("student1"),
+    col("s1.age").alias("age1"),
+    col("s2.name").alias("student2"), 
+    col("s2.age").alias("age2"),
+    col("s1.major")
+).show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q12: Complex Filtering with Joins</h4>
+                <div class="code-block">
+enrollments_df.join(students_df, "student_id", "inner") \
+    .join(courses_df, "course_id", "inner") \
+    .filter(
+        (col("course_id").like("CS%")) &  # CS courses
+        (col("major") != "Computer Science")  # Non-CS majors
+    ) \
+    .select("name", "major", "course_name") \
+    .distinct() \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q13: Full Outer Join Analysis</h4>
+                <div class="code-block">
+students_df.join(enrollments_df, "student_id", "full_outer") \
+    .join(courses_df, "course_id", "full_outer") \
+    .select(
+        coalesce(col("name"), lit("Unknown Student")).alias("student"),
+        coalesce(col("course_name"), lit("No Course")).alias("course"),
+        coalesce(col("grade"), lit("Not Enrolled")).alias("status")
+    ) \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q14: Conditional Joins</h4>
+                <div class="code-block">
+course_counts = enrollments_df.groupBy("student_id") \
+    .agg(count("course_id").alias("course_count")) \
+    .filter(col("course_count") > 1)
+
+students_df.join(course_counts, "student_id", "inner") \
+    .select("name", "major", "course_count") \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q15: Multi-Condition Joins</h4>
+                <div class="code-block">
+enrollments_df.join(students_df, "student_id", "inner") \
+    .join(courses_df, "course_id", "inner") \
+    .filter(
+        (col("major").isin(["Computer Science", "Mathematics"])) &
+        (col("credits") >= 3) &
+        (col("age") >= 20)
+    ) \
+    .select("name", "major", "age", "course_name", "credits", "grade") \
+    .show()
+                </div>
+            </div>
+        </section>
+
+        <!-- Common Mistakes -->
+        <section id="common-mistakes" class="content-section">
+            <h2>🚨 Common Join Mistakes & How to Avoid Them</h2>
+            
+            <div class="highlight-box error">
+                <h4>Mistake 1: Not Using col() with Aliases</h4>
+                <div class="code-block">
+# ❌ WRONG: This will fail
+students_df.alias("s1").join(
+    students_df.alias("s2"),
+    s1.major == s2.major  # Error: s1, s2 not defined
+)
+
+# ✅ CORRECT: Use col()
+students_df.alias("s1").join(
+    students_df.alias("s2"),
+    col("s1.major") == col("s2.major")
+)
+                </div>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Mistake 2: Duplicate Column Names</h4>
+                <div class="code-block">
+# ❌ PROBLEM: Both DataFrames have 'customer_id'
+result = orders_df.join(customers_df, 
+    orders_df.customer_id == customers_df.customer_id, "inner")
+# This creates two 'customer_id' columns!
+
+# ✅ SOLUTION 1: Use string join
+result = orders_df.join(customers_df, "customer_id", "inner")
+
+# ✅ SOLUTION 2: Drop duplicate column
+result = orders_df.join(customers_df, 
+    orders_df.customer_id == customers_df.customer_id, "inner"
+).drop(customers_df.customer_id)
+                </div>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Mistake 3: Wrong Join Type</h4>
+                <div class="code-block">
+# ❌ WRONG: Using inner join when you want all orders
+orders_df.join(customers_df, "customer_id", "inner")  # Loses orders without customers
+
+# ✅ CORRECT: Use left join to keep all orders
+orders_df.join(customers_df, "customer_id", "left")
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Tips -->
+        <section id="performance-tips" class="content-section">
+            <h2>🚀 Join Performance Tips</h2>
+            
+            <h3>1. Broadcast Joins for Small Tables</h3>
+            <div class="code-block">
+from pyspark.sql.functions import broadcast
+
+# If one DataFrame is small (< 10MB), use broadcast
+large_df.join(broadcast(small_df), "key", "inner")
+            </div>
+            
+            <h3>2. Partitioning Strategy</h3>
+            <div class="code-block">
+# Partition large DataFrames before joining
+df1.repartition("join_key").join(df2.repartition("join_key"), "join_key")
+            </div>
+            
+            <h3>3. Join Order Matters</h3>
+            <div class="code-block">
+# Put smaller DataFrame on the right for better performance
+large_df.join(small_df, "key")  # Better than small_df.join(large_df, "key")
+            </div>
+        </section>
+
+        <!-- Quick Reference -->
+        <section class="content-section">
+            <h2>📋 Quick Reference</h2>
+            
+            <div class="highlight-box">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="background-color: #f5f5f5;">
+                        <th style="padding: 10px; border: 1px solid #ddd;">Join Type</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">When to Use</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Result</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><code>inner</code></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Only matching records</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Intersection</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><code>left</code></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">All from left + matching from right</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Keep all left</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><code>right</code></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">All from right + matching from left</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Keep all right</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><code>full_outer</code></td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">All records from both</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Union with NULLs</td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="topic-navigation">
+            <a href="dataframe-operations.html" class="nav-link">
+                <span>←</span>
+                <span>Previous: DataFrame Operations</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span>Home</span>
+                <span>🏠</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+                <a href="shared-variables.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Shared Variables</span>
+                </a>
+                <a href="spark-sql.html" class="nav-link">
+                    <span class="nav-icon">🗃️</span>
+                    <span class="nav-text">Spark SQL</span>
+                </a>
+                <a href="spark-sql-programming.html" class="nav-link">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">SQL Programming</span>
+                </a>
+                <a href="dataframe-operations.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">DataFrame Operations</span>
+                </a>
+                <a href="joins.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">DataFrame Joins</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+        // Function to bypass password screen
+        function bypassPasswordScreen() {
+            if (passwordScreen) {
+                passwordScreen.style.display = 'none';
+            }
+            
+            // Always skip splash for returning users - go directly to main content
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Click to skip splash functionality
+        const splash = document.getElementById('welcomeSplash');
+        if (splash) {
+            splash.addEventListener('click', () => {
+                splash.classList.add('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.content-header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

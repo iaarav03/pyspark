@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PySpark Date & Time Operations - Complete Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Password Protection Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-container">
+            <div class="password-header">
+                <div class="lock-icon">🔐</div>
+                <h1 class="password-title">Secure Access Required</h1>
+                <p class="password-subtitle">Enter the secret code to access PySpark Learning Hub</p>
+            </div>
+            
+            <div class="password-form">
+                <div class="input-container">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+                    <div class="input-underline"></div>
+                </div>
+                <button id="submitPassword" class="password-submit">Access Hub</button>
+                <div id="passwordError" class="password-error">Incorrect password. Try again!</div>
+            </div>
+            
+            <div class="password-hint">
+                <p>💡 Hint: It's related to our learning platform name + a cute term</p>
+                <p class="session-info">✨ Password will be remembered for 24 hours</p>
+            </div>
+            
+            <!-- Animated Background for Password Screen -->
+            <div class="password-bg">
+                <div class="security-pattern"></div>
+                <div class="security-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Welcome Splash Screen -->
+    <div id="welcomeSplash" class="welcome-splash">
+        <!-- Clean Background -->
+        <div class="splash-bg">
+            <div class="bg-layer layer1"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="splash-content">
+            <!-- Simple Logo -->
+            <div class="splash-logo">
+                <div class="simple-logo">
+                    <span class="spark-icon">🔥</span>
+                </div>
+                <h1 class="splash-title">
+                    <span class="title-word">PySpark</span>
+                    <span class="title-subtitle">Learning Hub</span>
+                </h1>
+            </div>
+            
+            <!-- Simple Message -->
+            <div class="splash-message">
+                <p class="creator-text">
+                    Created with <span class="heart">❤️</span> by <span class="creator-name">Aarav</span>
+                </p>
+                <p class="enjoy-text">Ready to learn PySpark? Let's go! 🚀</p>
+            </div>
+            
+            <!-- Simple Loader -->
+            <div class="splash-loader">
+                <div class="simple-spinner"></div>
+                <p class="loading-text">Loading your learning journey...</p>
+            </div>
+        </div>
+        
+        <!-- Click to Skip -->
+        <div class="skip-intro">
+            <p>Click to skip →</p>
+        </div>
+        
+        <!-- Session Management -->
+        <div class="session-controls">
+            <button id="logoutBtn" class="logout-btn" title="Clear session and require password again">🔓 Logout</button>
+        </div>
+    </div>
+
+    <header class="content-header">
+        <div class="content-title">
+            <h1>📅 PySpark Date & Time Operations</h1>
+            <p>Master date/time functions, format patterns, aggregations, and tricky business scenarios</p>
+        </div>
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> / <a href="#date-time">Date & Time Operations</a>
+        </div>
+    </header>
+
+    <main class="content-body">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#format-patterns">Date/Time Format Patterns</a></li>
+                <li><a href="#data-type-requirements">Data Type Requirements</a></li>
+                <li><a href="#essential-functions">Essential Date Functions</a></li>
+                <li><a href="#aggregation-insights">Aggregation Insights</a></li>
+                <li><a href="#practice-dataset">Practice Dataset</a></li>
+                <li><a href="#basic-questions">Basic Questions (1-5)</a></li>
+                <li><a href="#intermediate-questions">Intermediate Questions (6-10)</a></li>
+                <li><a href="#advanced-questions">Advanced Questions (11-20)</a></li>
+                <li><a href="#solutions">Complete Solutions</a></li>
+                <li><a href="#common-mistakes">Common Mistakes</a></li>
+                <li><a href="#business-patterns">Business Patterns</a></li>
+            </ul>
+        </div>
+
+        <!-- Format Patterns -->
+        <section id="format-patterns" class="content-section">
+            <h2>🎯 Date/Time Format Patterns - CRITICAL!</h2>
+            
+            <div class="highlight-box error">
+                <h4>🔥 Most Important Concept: Format Patterns Must Match Your Data!</h4>
+                <p>The format pattern in <code>to_date()</code> and <code>to_timestamp()</code> must EXACTLY match your string data format.</p>
+            </div>
+            
+            <h3>Complete Format Pattern Reference</h3>
+            <div class="code-block">
+# Date/Time Format Patterns:
+# y = year (yy = 2-digit year like 23, yyyy = 4-digit year like 2023)
+# M = month (M = 1-12, MM = 01-12, MMM = Jan-Dec, MMMM = January-December)
+# d = day of month (d = 1-31, dd = 01-31)
+# H = hour in 24-hour format (H = 0-23, HH = 00-23)
+# h = hour in 12-hour format (h = 1-12, hh = 01-12)
+# m = minute (m = 0-59, mm = 00-59)
+# s = second (s = 0-59, ss = 00-59)
+# a = AM/PM marker
+
+# Examples:
+# "yyyy-MM-dd" = "2023-12-25"
+# "dd/MM/yyyy" = "25/12/2023"
+# "yyyy-MM-dd HH:mm:ss" = "2023-12-25 14:30:45"
+# "dd-MMM-yyyy hh:mm:ss a" = "25-Dec-2023 02:30:45 PM"
+            </div>
+            
+            <h3>Common Format Examples</h3>
+            <div class="code-block">
+# Standard formats you'll encounter:
+patterns_examples = [
+    ("2024-01-15", "yyyy-MM-dd"),           # ISO standard
+    ("15/01/2024", "dd/MM/yyyy"),           # European format
+    ("01/15/2024", "MM/dd/yyyy"),           # US format
+    ("Jan 15, 2024", "MMM dd, yyyy"),       # Month name format
+    ("2024-01-15 14:30:00", "yyyy-MM-dd HH:mm:ss"),  # With time
+    ("15-Jan-2024", "dd-MMM-yyyy"),         # Short month name
+    ("2024/01/15 2:30:45 PM", "yyyy/MM/dd h:mm:ss a"),  # 12-hour with AM/PM
+]
+
+for date_str, pattern in patterns_examples:
+    print(f"'{date_str}' uses pattern '{pattern}'")
+            </div>
+            
+            <h3>Conversion Examples</h3>
+            <div class="code-block">
+# Convert different date formats
+df_converted = df_dates.withColumn("order_date_proper", to_date(col("order_date"), "yyyy-MM-dd")) \
+    .withColumn("delivery_ts_proper", to_timestamp(col("delivery_timestamp"), "yyyy-MM-dd HH:mm:ss"))
+
+# Multiple format handling
+df_multi = df.withColumn("birth_date_proper", 
+    when(col("birth_date").contains("/"), to_date(col("birth_date"), "dd/MM/yyyy"))
+    .when(col("birth_date").contains("-"), to_date(col("birth_date"), "yyyy-MM-dd"))
+    .otherwise(None))
+            </div>
+        </section>
+
+        <!-- Data Type Requirements -->
+        <section id="data-type-requirements" class="content-section">
+            <h2>🎯 Data Type Requirements for Date Functions</h2>
+            
+            <div class="highlight-box warning">
+                <h4>⚠️ Critical Rule: Convert First, Then Apply!</h4>
+                <p>Most date functions require proper DATE or TIMESTAMP columns, not strings!</p>
+            </div>
+            
+            <h3>Functions by Input Type</h3>
+            
+            <h4>📝 STRING Input Functions (Conversion):</h4>
+            <div class="code-block">
+to_date(col, format)           # Input: STRING → Output: DATE
+to_timestamp(col, format)      # Input: STRING → Output: TIMESTAMP
+            </div>
+            
+            <h4>📅 DATE/TIMESTAMP Input Required:</h4>
+            <div class="code-block">
+# Date Parts Extraction - Need DATE or TIMESTAMP
+year(col)                      # Input: DATE/TIMESTAMP
+month(col)                     # Input: DATE/TIMESTAMP  
+dayofmonth(col)               # Input: DATE/TIMESTAMP
+dayofweek(col)                # Input: DATE/TIMESTAMP
+dayofyear(col)                # Input: DATE/TIMESTAMP
+weekofyear(col)               # Input: DATE/TIMESTAMP
+quarter(col)                  # Input: DATE/TIMESTAMP
+
+# Date Arithmetic - Need DATE
+date_add(col, days)           # Input: DATE (first parameter)
+date_sub(col, days)           # Input: DATE (first parameter)
+add_months(col, months)       # Input: DATE (first parameter)
+datediff(date1, date2)        # Input: Both parameters must be DATE
+
+# Date Formatting - Need DATE or TIMESTAMP
+date_format(col, format)      # Input: DATE/TIMESTAMP → Output: STRING
+            </div>
+            
+            <h3>Common Conversion Workflow</h3>
+            <div class="code-block">
+# Step 1: Check your data types first
+df.printSchema()
+
+# Step 2: Convert strings to proper date/timestamp types
+df_step1 = df.withColumn("proper_date", to_date(col("date_string"), "yyyy-MM-dd"))
+
+# Step 3: Verify conversion worked (check for NULLs)
+df_step1.filter(col("proper_date").isNull()).count()  # Should be 0
+
+# Step 4: Apply date functions
+df_final = df_step1.withColumn("year", year(col("proper_date"))) \
+                   .withColumn("month", month(col("proper_date")))
+            </div>
+        </section>
+
+        <!-- Essential Functions -->
+        <section id="essential-functions" class="content-section">
+            <h2>⚡ Essential Date Functions Reference</h2>
+            
+            <h3>Current Date/Time Functions</h3>
+            <div class="code-block">
+# Get current date and time
+df.withColumn("current_date", current_date()) \
+  .withColumn("current_timestamp", current_timestamp())
+            </div>
+            
+            <h3>Date Parts Extraction</h3>
+            <div class="code-block">
+# Extract parts from dates
+df.withColumn("year", year(col("order_date_proper"))) \
+  .withColumn("month", month(col("order_date_proper"))) \
+  .withColumn("day", dayofmonth(col("order_date_proper"))) \
+  .withColumn("day_of_week", dayofweek(col("order_date_proper"))) \
+  .withColumn("quarter", quarter(col("order_date_proper")))
+
+# Key: dayofweek() returns 1=Sunday, 2=Monday, ..., 7=Saturday
+            </div>
+            
+            <h3>Date Arithmetic & Calculations</h3>
+            <div class="code-block">
+# Adding/Subtracting time
+df.withColumn("order_plus_7_days", date_add(col("order_date_proper"), 7)) \
+  .withColumn("order_minus_3_days", date_sub(col("order_date_proper"), 3)) \
+  .withColumn("next_month", add_months(col("order_date_proper"), 1))
+
+# Date differences (very important!)
+df.withColumn("days_since_order", 
+    datediff(current_date(), col("order_date_proper")))
+
+# Age calculations
+df.withColumn("age_years", 
+    floor(datediff(current_date(), col("birth_date_proper")) / 365.25))
+            </div>
+            
+            <h3>Date Filtering & Comparisons</h3>
+            <div class="code-block">
+# Filter by date ranges
+df.filter(col("order_date_proper") >= "2024-02-01")
+
+# Filter by month
+df.filter(month(col("order_date_proper")) == 1)
+
+# Filter by day of week (weekends)
+df.filter(dayofweek(col("order_date_proper")).isin([1, 7]))
+
+# Last 30 days
+df.filter(col("order_date_proper") >= date_sub(current_date(), 30))
+            </div>
+            
+            <h3>Date Formatting & Display</h3>
+            <div class="code-block">
+# Format dates for display
+df.withColumn("formatted_date", date_format(col("order_date_proper"), "dd/MM/yyyy")) \
+  .withColumn("month_name", date_format(col("order_date_proper"), "MMMM")) \
+  .withColumn("day_name", date_format(col("order_date_proper"), "EEEE"))
+            </div>
+        </section>
+
+        <!-- Aggregation Insights -->
+        <section id="aggregation-insights" class="content-section">
+            <h2>🧠 Aggregation Insights - Key Learnings</h2>
+            
+            <div class="highlight-box success">
+                <h4>💡 Key Insight: agg() vs select() vs withColumn()</h4>
+                <p>Understanding when to use each function is crucial for avoiding errors!</p>
+            </div>
+            
+            <h3>Using agg() Without groupBy()</h3>
+            <div class="code-block">
+# Yes! You can use agg() without groupBy() to perform aggregations on the entire DataFrame
+# This applies the aggregation functions to all rows in the DataFrame
+
+# Single aggregation
+df.agg(count("*").alias("total_rows")).show()
+
+# Multiple aggregations
+df.agg(
+    count("*").alias("total_rows"),
+    sum("price").alias("total_price"),
+    avg("price").alias("avg_price"),
+    max("price").alias("max_price"),
+    min("price").alias("min_price")
+).show()
+
+# Complex aggregations with conditions
+df.agg(
+    sum(when(col("returned") == "Y", 1).otherwise(0)).alias("total_returns"),
+    round(sum(when(col("returned") == "Y", 1).otherwise(0)) / count("*") * 100, 2).alias("overall_return_rate_pct")
+).show()
+            </div>
+            
+            <h3>Common Mistakes and Correct Approaches</h3>
+            
+            <h4>❌ Wrong: Mixing selections with aggregations</h4>
+            <div class="code-block">
+# This is wrong because:
+# 1. You can't mix column selections (*) with aggregation functions (sum) in select()
+# 2. The * syntax for all columns doesn't work with aggregations
+# 3. sum() is an aggregation function that needs to be used with agg() or groupBy()
+
+# df.select("*", sum(col("discount_pct"))).show()  # ERROR!
+            </div>
+            
+            <h4>✅ Correct Ways:</h4>
+            <div class="code-block">
+# Option 1: Use agg() for aggregation only
+df.agg(sum(col("discount_pct")).alias("total_discount")).show()
+
+# Option 2: If you want both individual rows AND aggregation, use window functions
+from pyspark.sql.window import Window
+df.select("*", sum(col("discount_pct")).over(Window.partitionBy()).alias("total_discount")).show()
+
+# Option 3: Show data first, then show aggregation separately
+df.show()  # Show all data
+df.agg(sum(col("discount_pct")).alias("total_discount")).show()  # Show aggregation
+
+# Option 4: Join aggregation back to original data
+df.agg(sum(col("discount_pct")).alias("total_discount")).join(df).show(1, vertical=True)
+            </div>
+            
+            <h4>❌ Wrong: Using aggregations in withColumn()</h4>
+            <div class="code-block">
+# This is wrong because:
+# 1. sum() is an aggregation function that requires groupBy() or agg() to work properly
+# 2. withColumn() is for adding/modifying columns with row-level operations, not aggregations
+# 3. You can't use aggregation functions directly in withColumn() without a window specification
+
+# df.withColumn("total_discount", sum(col("discount_pct")))  # ERROR!
+            </div>
+            
+            <h4>✅ Correct Alternatives:</h4>
+            <div class="code-block">
+# Option 1: Use window function to add total sum to each row
+from pyspark.sql.window import Window
+df.withColumn("total_discount", sum(col("discount_pct")).over(Window.partitionBy()))
+
+# Option 2: Use agg() to get the aggregated result
+df.agg(sum(col("discount_pct")).alias("total_discount"))
+
+# Option 3: Add a literal value (if you want the same value for all rows)
+total_discount = df.agg(sum(col("discount_pct"))).collect()[0][0]
+df.withColumn("total_discount", lit(total_discount))
+            </div>
+        </section>
+
+        <!-- Practice Dataset -->
+        <section id="practice-dataset" class="content-section">
+            <h2>📊 Practice Dataset: Employee Management System</h2>
+            
+            <div class="code-block">
+from pyspark.sql import SparkSession, Row
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from datetime import datetime, date
+
+# Your SparkSession
+spark = spark if 'spark' in globals() else SparkSession.builder.appName("Date-Practice").getOrCreate()
+
+# Comprehensive dataset with various date scenarios
+employee_data = [
+    ("EMP001", "Alice Johnson", "15/01/1990", "2020-03-15", "2024-01-10 09:30:00", "Engineering", "Senior", 75000),
+    ("EMP002", "Bob Smith", "22/12/1985", "2019-07-01", "2024-01-08 14:45:00", "Marketing", "Manager", 85000),
+    ("EMP003", "Carol Davis", "08/05/1992", "2021-11-20", None, "Engineering", "Junior", 65000),  # No last login
+    ("EMP004", "David Wilson", "30/09/1988", "2018-02-28", "2024-01-12 11:15:00", "Sales", "Senior", 70000),
+    ("EMP005", "Eva Brown", "14/07/1995", "2022-06-10", "2024-01-09 16:20:00", "HR", "Junior", 60000),
+    ("EMP006", "Frank Miller", "03/11/1987", "2017-09-05", "2024-01-11 08:45:00", "Engineering", "Manager", 95000),
+    ("EMP007", "Grace Lee", "25/04/1993", "2023-01-15", "2024-01-07 13:30:00", "Marketing", "Junior", 58000),
+    ("EMP008", "Henry Taylor", "18/08/1986", "2020-12-01", "2024-01-06 10:00:00", "Sales", "Senior", 72000),
+    ("EMP009", "Ivy Chen", "12/02/1991", "2021-04-18", "2024-01-05 15:45:00", "Engineering", "Senior", 78000),
+    ("EMP010", "Jack Anderson", "07/06/1989", "2019-10-30", None, "HR", "Manager", 88000),  # No last login
+]
+
+schema = StructType([
+    StructField("emp_id", StringType(), False),
+    StructField("name", StringType(), True),
+    StructField("birth_date", StringType(), True),        # DD/MM/YYYY format
+    StructField("hire_date", StringType(), True),         # YYYY-MM-DD format  
+    StructField("last_login", StringType(), True),        # YYYY-MM-DD HH:mm:ss format
+    StructField("department", StringType(), True),
+    StructField("level", StringType(), True),
+    StructField("salary", IntegerType(), True)
+])
+
+df_employees = spark.createDataFrame(employee_data, schema)
+
+# Convert to proper date types (you'll need this for most questions)
+df_clean = df_employees \
+    .withColumn("birth_date_proper", to_date(col("birth_date"), "dd/MM/yyyy")) \
+    .withColumn("hire_date_proper", to_date(col("hire_date"), "yyyy-MM-dd")) \
+    .withColumn("last_login_proper", to_timestamp(col("last_login"), "yyyy-MM-dd HH:mm:ss"))
+
+print("=== CLEANED DATASET WITH PROPER DATES ===")
+df_clean.printSchema()
+df_clean.show(5, truncate=False)
+            </div>
+        </section>
+
+        <!-- Basic Questions -->
+        <section id="basic-questions" class="content-section">
+            <h2>🌟 BASIC LEVEL QUESTIONS (1-5)</h2>
+            
+            <div class="qa-section">
+                <h4>Q1. Basic Date Conversion & Extraction</h4>
+                <p><strong>Question:</strong> Convert the birth_date string to proper date format and extract the year, month, and day.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use to_date(), year(), month(), dayofmonth()
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q2. Current Age Calculation</h4>
+                <p><strong>Question:</strong> Calculate each employee's current age in years.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use datediff() with current_date(), then divide by 365.25
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q3. Format Display Dates</h4>
+                <p><strong>Question:</strong> Show employee names with their birth dates formatted as "Month DD, YYYY" (e.g., "January 15, 1990").</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use date_format() with pattern "MMMM dd, yyyy"
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q4. Filter by Birth Month</h4>
+                <p><strong>Question:</strong> Find all employees born in January.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use month() function and filter
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q5. Days Since Hire</h4>
+                <p><strong>Question:</strong> Calculate how many days each employee has been with the company.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use datediff() between current_date() and hire_date_proper
+                </div>
+            </div>
+        </section>
+
+        <!-- Intermediate Questions -->
+        <section id="intermediate-questions" class="content-section">
+            <h2>🔥 INTERMEDIATE LEVEL QUESTIONS (6-10)</h2>
+            
+            <div class="qa-section">
+                <h4>Q6. Experience Categories</h4>
+                <p><strong>Question:</strong> Categorize employees by their experience:</p>
+                <ul>
+                    <li>"New" (< 2 years)</li>
+                    <li>"Experienced" (2-5 years)</li>
+                    <li>"Veteran" (> 5 years)</li>
+                </ul>
+                <div class="code-block">
+# Your solution here:
+# Hint: Calculate years of experience, then use when().otherwise()
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q7. Birthday This Month</h4>
+                <p><strong>Question:</strong> Find employees who have birthdays in the current month.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Compare month(birth_date_proper) with month(current_date())
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q8. Last Login Analysis</h4>
+                <p><strong>Question:</strong> Show employees who haven't logged in for more than 7 days (exclude NULL logins).</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Filter non-null, then use datediff() with current_date()
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q9. Hire Date Patterns</h4>
+                <p><strong>Question:</strong> Group employees by the day of the week they were hired and count each group.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use dayofweek() and date_format() to get day names
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q10. Quarter-wise Hiring</h4>
+                <p><strong>Question:</strong> Show hiring trends by quarter and year.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use quarter() and year() functions, then group by
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Questions -->
+        <section id="advanced-questions" class="content-section">
+            <h2>🚀 ADVANCED LEVEL QUESTIONS (11-20)</h2>
+            
+            <div class="qa-section">
+                <h4>Q11. Age Distribution Analysis</h4>
+                <p><strong>Question:</strong> Create age groups (20-25, 26-30, 31-35, 36-40, 40+) and show the count in each group.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Calculate age, then use when().otherwise() for age ranges
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q12. Seasonal Hiring Patterns</h4>
+                <p><strong>Question:</strong> Analyze hiring patterns by season:</p>
+                <ul>
+                    <li>Spring (Mar-May)</li>
+                    <li>Summer (Jun-Aug)</li>
+                    <li>Fall (Sep-Nov)</li>
+                    <li>Winter (Dec-Feb)</li>
+                </ul>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use month() with when().otherwise() to categorize seasons
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q13. Login Frequency Analysis</h4>
+                <p><strong>Question:</strong> Calculate the average days between hire date and last login for each department.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use datediff(), filter non-null logins, group by department
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q14. Anniversary Alerts</h4>
+                <p><strong>Question:</strong> Find employees whose work anniversary is within the next 30 days.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use add_months() to get this year's anniversary, then compare with current date
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q15. Weekend Warriors</h4>
+                <p><strong>Question:</strong> Find employees who were hired on weekends and show what day of the week.</p>
+                <div class="code-block">
+# Your solution here:
+# Hint: Use dayofweek() to filter for 1 (Sunday) and 7 (Saturday)
+                </div>
+            </div>
+            
+            <div class="qa-section">
+                <h4>Q20. Complex Date Business Logic</h4>
+                <p><strong>Question:</strong> Create a comprehensive employee report showing:</p>
+                <ul>
+                    <li>Current age</li>
+                    <li>Years of experience</li>
+                    <li>Days since last login</li>
+                    <li>Next birthday countdown</li>
+                    <li>Work anniversary this year</li>
+                    <li>Salary per year of experience</li>
+                </ul>
+                <div class="code-block">
+# Your solution here:
+# Hint: Combine multiple date calculations in a single query
+                </div>
+            </div>
+        </section>
+
+        <!-- Solutions -->
+        <section id="solutions" class="content-section">
+            <h2>✅ Complete Solutions</h2>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q1: Basic Date Conversion & Extraction</h4>
+                <div class="code-block">
+df_clean.select(
+    "emp_id", "name", "birth_date",
+    year(col("birth_date_proper")).alias("birth_year"),
+    month(col("birth_date_proper")).alias("birth_month"), 
+    dayofmonth(col("birth_date_proper")).alias("birth_day")
+).show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q2: Current Age Calculation</h4>
+                <div class="code-block">
+df_clean.withColumn("age_years", 
+    floor(datediff(current_date(), col("birth_date_proper")) / 365.25)
+).select("emp_id", "name", "birth_date_proper", "age_years").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q3: Format Display Dates</h4>
+                <div class="code-block">
+df_clean.select(
+    "name",
+    date_format(col("birth_date_proper"), "MMMM dd, yyyy").alias("formatted_birth_date")
+).show(truncate=False)
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q4: Filter by Birth Month</h4>
+                <div class="code-block">
+df_clean.filter(month(col("birth_date_proper")) == 1).select("name", "birth_date_proper").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q5: Days Since Hire</h4>
+                <div class="code-block">
+df_clean.withColumn("days_with_company",
+    datediff(current_date(), col("hire_date_proper"))
+).select("name", "hire_date_proper", "days_with_company").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q6: Experience Categories</h4>
+                <div class="code-block">
+df_clean.withColumn("experience_years",
+    floor(datediff(current_date(), col("hire_date_proper")) / 365.25)
+).withColumn("experience_category",
+    when(col("experience_years") < 2, "New")
+    .when(col("experience_years") <= 5, "Experienced") 
+    .otherwise("Veteran")
+).select("name", "experience_years", "experience_category").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q7: Birthday This Month</h4>
+                <div class="code-block">
+df_clean.filter(
+    month(col("birth_date_proper")) == month(current_date())
+).select("name", "birth_date_proper").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q8: Last Login Analysis</h4>
+                <div class="code-block">
+df_clean.filter(col("last_login_proper").isNotNull()) \
+    .withColumn("days_since_login", 
+    datediff(current_date(), col("last_login_proper"))) \
+    .filter(col("days_since_login") > 7) \
+    .select("name", "last_login_proper", "days_since_login").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q9: Hire Date Patterns</h4>
+                <div class="code-block">
+df_clean.withColumn("hire_day_of_week", dayofweek(col("hire_date_proper"))) \
+    .withColumn("day_name", date_format(col("hire_date_proper"), "EEEE")) \
+    .groupBy("hire_day_of_week", "day_name") \
+    .agg(count("*").alias("hire_count")) \
+    .orderBy("hire_day_of_week").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q10: Quarter-wise Hiring</h4>
+                <div class="code-block">
+df_clean.withColumn("hire_quarter", quarter(col("hire_date_proper"))) \
+    .withColumn("hire_year", year(col("hire_date_proper"))) \
+    .groupBy("hire_year", "hire_quarter") \
+    .agg(count("*").alias("hires")) \
+    .orderBy("hire_year", "hire_quarter") \
+    .show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q11: Age Distribution Analysis</h4>
+                <div class="code-block">
+df_clean.withColumn("age", 
+    floor(datediff(current_date(), col("birth_date_proper")) / 365.25)
+).withColumn("age_group",
+    when(col("age") <= 25, "20-25")
+    .when(col("age") <= 30, "26-30")
+    .when(col("age") <= 35, "31-35")
+    .when(col("age") <= 40, "36-40")
+    .otherwise("40+")
+).groupBy("age_group").agg(count("*").alias("employee_count")).show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q12: Seasonal Hiring Patterns</h4>
+                <div class="code-block">
+df_clean.withColumn("hire_month", month(col("hire_date_proper"))) \
+    .withColumn("season",
+    when(col("hire_month").isin([3, 4, 5]), "Spring")
+    .when(col("hire_month").isin([6, 7, 8]), "Summer")
+    .when(col("hire_month").isin([9, 10, 11]), "Fall")
+    .otherwise("Winter")
+).groupBy("season").agg(count("*").alias("hires")).show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q14: Anniversary Alerts</h4>
+                <div class="code-block">
+df_clean.withColumn("this_year_anniversary",
+    to_date(concat(year(current_date()), 
+                   date_format(col("hire_date_proper"), "-MM-dd")))
+).withColumn("days_to_anniversary",
+    datediff(col("this_year_anniversary"), current_date())
+).filter((col("days_to_anniversary") >= 0) & (col("days_to_anniversary") <= 30)) \
+.select("name", "hire_date_proper", "this_year_anniversary", "days_to_anniversary") \
+.show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q15: Weekend Warriors</h4>
+                <div class="code-block">
+df_clean.filter(dayofweek(col("hire_date_proper")).isin([1, 7])) \
+    .withColumn("day_name", date_format(col("hire_date_proper"), "EEEE")) \
+    .select("name", "hire_date_proper", "day_name").show()
+                </div>
+            </div>
+            
+            <div class="highlight-box success">
+                <h4>Solution Q20: Complex Business Logic</h4>
+                <div class="code-block">
+df_comprehensive = df_clean.withColumn("current_age",
+    floor(datediff(current_date(), col("birth_date_proper")) / 365.25)
+).withColumn("years_experience", 
+    floor(datediff(current_date(), col("hire_date_proper")) / 365.25)
+).withColumn("days_since_login",
+    when(col("last_login_proper").isNotNull(),
+         datediff(current_date(), col("last_login_proper")))
+    .otherwise(None)
+).withColumn("days_to_birthday",
+    datediff(
+        to_date(concat(year(current_date()), 
+                       date_format(col("birth_date_proper"), "-MM-dd"))),
+        current_date()
+    )
+).withColumn("work_anniversary_this_year",
+    to_date(concat(year(current_date()), 
+                   date_format(col("hire_date_proper"), "-MM-dd")))
+).withColumn("salary_per_year_experience",
+    when(col("years_experience") > 0, col("salary") / col("years_experience"))
+    .otherwise(col("salary"))
+)
+
+df_comprehensive.select(
+    "name", "current_age", "years_experience", "days_since_login",
+    "days_to_birthday", "work_anniversary_this_year", "salary_per_year_experience"
+).show()
+                </div>
+            </div>
+        </section>
+
+        <!-- Common Mistakes -->
+        <section id="common-mistakes" class="content-section">
+            <h2>🚨 Common Date/Time Mistakes & Solutions</h2>
+            
+            <div class="highlight-box error">
+                <h4>Mistake 1: Not handling NULL dates</h4>
+                <div class="code-block">
+# ❌ WRONG - This will cause issues with NULL dates
+df_converted.withColumn("days_diff", datediff(current_date(), col("delivery_ts_proper")))
+
+# ✅ CORRECT - Handle NULLs properly
+df_converted.withColumn("days_diff", 
+    when(col("delivery_ts_proper").isNotNull(), 
+         datediff(current_date(), col("delivery_ts_proper")))
+    .otherwise(None))
+                </div>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Mistake 2: Wrong date patterns</h4>
+                <div class="code-block">
+# ❌ WRONG - Pattern doesn't match data
+to_date("15/01/2024", "yyyy-MM-dd")  # Returns NULL
+
+# ✅ CORRECT - Pattern matches data format  
+to_date("15/01/2024", "dd/MM/yyyy")  # Works correctly
+                </div>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Mistake 3: Applying date functions to strings</h4>
+                <div class="code-block">
+# ❌ WRONG - Applying date functions to string columns
+df.withColumn("year_wrong", year(col("date_string")))  # ERROR!
+
+# ✅ CORRECT - Convert to proper type first
+df.withColumn("proper_date", to_date(col("date_string"), "yyyy-MM-dd")) \
+  .withColumn("year_correct", year(col("proper_date")))
+                </div>
+            </div>
+            
+            <div class="highlight-box error">
+                <h4>Mistake 4: Incorrect age calculations</h4>
+                <div class="code-block">
+# ❌ WRONG - Simple division by 365 (ignores leap years)
+df.withColumn("age_wrong", datediff(current_date(), col("birth_date")) / 365)
+
+# ✅ CORRECT - Use 365.25 to account for leap years
+df.withColumn("age_correct", 
+    floor(datediff(current_date(), col("birth_date")) / 365.25))
+                </div>
+            </div>
+        </section>
+
+        <!-- Business Patterns -->
+        <section id="business-patterns" class="content-section">
+            <h2>💼 Business Date Patterns</h2>
+            
+            <h3>Monthly Sales Trends</h3>
+            <div class="code-block">
+# Group orders by year-month
+monthly_summary = df_converted.withColumn("year_month", date_format(col("order_date_proper"), "yyyy-MM")) \
+    .groupBy("year_month") \
+    .agg(count("*").alias("order_count")) \
+    .orderBy("year_month")
+            </div>
+            
+            <h3>Customer Lifetime Analysis</h3>
+            <div class="code-block">
+# Calculate customer tenure and value
+customer_analysis = df_clean.groupBy("customer_id") \
+    .agg(
+        min("order_date").alias("first_order"),
+        max("order_date").alias("last_order"),
+        count("*").alias("total_orders"),
+        sum("amount").alias("total_spent")
+    ) \
+    .withColumn("customer_lifetime_days", 
+    datediff(col("last_order"), col("first_order")))
+            </div>
+            
+            <h3>Seasonal Business Analysis</h3>
+            <div class="code-block">
+# Analyze business performance by season
+seasonal_performance = df.withColumn("month", month(col("order_date"))) \
+    .withColumn("season",
+    when(col("month").isin([12, 1, 2]), "Winter")
+    .when(col("month").isin([3, 4, 5]), "Spring")
+    .when(col("month").isin([6, 7, 8]), "Summer")
+    .otherwise("Fall")
+) \
+.groupBy("season") \
+.agg(
+    count("*").alias("order_count"),
+    sum("amount").alias("total_revenue"),
+    avg("amount").alias("avg_order_value")
+)
+            </div>
+        </section>
+
+        <!-- Quick Reference -->
+        <section class="content-section">
+            <h2>📋 Quick Reference Guide</h2>
+            
+            <div class="highlight-box">
+                <h4>🎯 Essential Workflow:</h4>
+                <ol>
+                    <li><strong>Check data types:</strong> <code>df.printSchema()</code></li>
+                    <li><strong>Convert strings:</strong> <code>to_date(col, format)</code></li>
+                    <li><strong>Verify conversion:</strong> Check for NULLs</li>
+                    <li><strong>Apply date functions:</strong> <code>year(), month(), datediff()</code></li>
+                    <li><strong>Handle NULLs:</strong> Use <code>when().otherwise()</code></li>
+                </ol>
+            </div>
+            
+            <div class="highlight-box">
+                <h4>🔥 Key Patterns to Remember:</h4>
+                <ul>
+                    <li><strong>Age calculation:</strong> <code>floor(datediff(current_date(), birth_date) / 365.25)</code></li>
+                    <li><strong>Days of week:</strong> 1=Sunday, 2=Monday, ..., 7=Saturday</li>
+                    <li><strong>Current month filter:</strong> <code>month(date_col) == month(current_date())</code></li>
+                    <li><strong>Last N days:</strong> <code>date_col >= date_sub(current_date(), N)</code></li>
+                    <li><strong>Format for display:</strong> <code>date_format(date_col, "dd/MM/yyyy")</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="topic-navigation">
+            <a href="joins.html" class="nav-link">
+                <span>←</span>
+                <span>Previous: DataFrame Joins</span>
+            </a>
+            <a href="index.html" class="nav-link">
+                <span>Home</span>
+                <span>🏠</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+                <a href="shared-variables.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Shared Variables</span>
+                </a>
+                <a href="spark-sql.html" class="nav-link">
+                    <span class="nav-icon">🗃️</span>
+                    <span class="nav-text">Spark SQL</span>
+                </a>
+                <a href="spark-sql-programming.html" class="nav-link">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">SQL Programming</span>
+                </a>
+                <a href="dataframe-operations.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">DataFrame Operations</span>
+                </a>
+                <a href="joins.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">DataFrame Joins</span>
+                </a>
+                <a href="date-time-operations.html" class="nav-link">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Date & Time Operations</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Password Protection Logic with Session Storage
+        const passwordScreen = document.getElementById('passwordScreen');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitButton = document.getElementById('submitPassword');
+        const passwordError = document.getElementById('passwordError');
+        const welcomeSplash = document.getElementById('welcomeSplash');
+        const correctPassword = 'pysparkbaby';
+        const sessionKey = 'pysparkAccess';
+        const splashShownKey = 'pysparkSplashShown';
+        const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        // Check if user already has valid session
+        function checkExistingSession() {
+            const sessionData = localStorage.getItem(sessionKey);
+            
+            if (sessionData) {
+                try {
+                    const session = JSON.parse(sessionData);
+                    const currentTime = new Date().getTime();
+                    
+                    // Check if session is still valid (within 24 hours)
+                    if (session.timestamp && (currentTime - session.timestamp) < sessionDuration) {
+                        // Valid session found - skip password screen
+                        bypassPasswordScreen();
+                        return true;
+                    } else {
+                        // Session expired - remove it
+                        localStorage.removeItem(sessionKey);
+                    }
+                } catch (e) {
+                    // Invalid session data - remove it
+                    localStorage.removeItem(sessionKey);
+                }
+            }
+            return false;
+        }
+        
+        // Function to bypass password screen
+        function bypassPasswordScreen() {
+            if (passwordScreen) {
+                passwordScreen.style.display = 'none';
+            }
+            
+            // Always skip splash for returning users - go directly to main content
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Function to create new session
+        function createSession() {
+            const sessionData = {
+                authenticated: true,
+                timestamp: new Date().getTime(),
+                user: 'authenticated'
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+        }
+        
+        // Initialize authentication check
+        if (!checkExistingSession()) {
+            // No valid session - show password screen, hide splash initially
+            if (welcomeSplash) {
+                welcomeSplash.style.display = 'none';
+            }
+        }
+        
+        // Password validation function
+        function validatePassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show success animation
+                passwordScreen.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)';
+                passwordScreen.style.transform = 'scale(1.05)';
+                
+                // Create session for future visits
+                createSession();
+                
+                setTimeout(() => {
+                    passwordScreen.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordScreen.style.display = 'none';
+                        
+                        // Show the beautiful splash screen with created by section
+                        if (welcomeSplash) {
+                            welcomeSplash.style.display = 'flex';
+                            welcomeSplash.style.opacity = '1';
+                            welcomeSplash.style.visibility = 'visible';
+                            welcomeSplash.classList.add('entering');
+                            
+                            // Remove any hidden class
+                            welcomeSplash.classList.remove('hidden');
+                            
+                            // Auto-hide after 4 seconds
+                            setTimeout(() => {
+                                welcomeSplash.classList.add('hidden');
+                                setTimeout(() => {
+                                    welcomeSplash.style.display = 'none';
+                                }, 1000);
+                            }, 4000);
+                            
+                            // Remove entering class after animation
+                            setTimeout(() => {
+                                welcomeSplash.classList.remove('entering');
+                            }, 1000);
+                        }
+                    }, 800);
+                }, 500);
+                
+                // Play success sound
+                playSuccessSound();
+                
+            } else {
+                // Wrong password - show error
+                passwordError.classList.add('show');
+                passwordInput.style.borderColor = '#ff6b6b';
+                passwordInput.style.background = 'rgba(255, 107, 107, 0.1)';
+                
+                // Shake animation
+                passwordInput.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    passwordError.classList.remove('show');
+                    passwordInput.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    passwordInput.style.background = 'rgba(255, 255, 255, 0.1)';
+                    passwordInput.style.animation = '';
+                }, 2000);
+                
+                // Clear input
+                passwordInput.value = '';
+                
+                // Play error sound
+                playErrorSound();
+            }
+        }
+        
+        // Event listeners for password submission
+        if (submitButton) {
+            submitButton.addEventListener('click', validatePassword);
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    validatePassword();
+                }
+            });
+            
+            // Focus on input when screen loads
+            passwordInput.focus();
+        }
+        
+        // Sound effects
+        function playSuccessSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+        
+        function playErrorSound() {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.3);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                // Clear session
+                localStorage.removeItem(sessionKey);
+                
+                // Show confirmation
+                if (confirm('You have been logged out. The page will reload and require password again. Continue?')) {
+                    // Reload page to show password screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Click to skip splash functionality
+        const splash = document.getElementById('welcomeSplash');
+        if (splash) {
+            splash.addEventListener('click', () => {
+                splash.classList.add('hidden');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 1000);
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.content-header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>
+
