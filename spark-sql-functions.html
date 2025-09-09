@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark SQL Functions - Complete Reference Guide | PySpark Learning Hub</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <div class="logo">
+                <a href="index.html">🔥 PySpark Learning Hub</a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#overview">Overview</a>
+                <a href="#functions">Functions</a>
+                <a href="#examples">Examples</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">🔥 Spark SQL Functions</h1>
+                <p class="hero-subtitle">Complete reference guide to all important Spark SQL functions with examples</p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">7</span>
+                        <span class="stat-label">Function Categories</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">50+</span>
+                        <span class="stat-label">Functions Covered</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">100+</span>
+                        <span class="stat-label">Code Examples</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="overview" class="section">
+            <div class="container">
+                <h2>📚 Function Categories Overview</h2>
+                <p class="section-subtitle">Master all essential Spark SQL functions organized by category</p>
+                
+                <div class="overview-grid">
+                    <div class="overview-card">
+                        <div class="card-icon">🔤</div>
+                        <h3>String Functions</h3>
+                        <p>Text manipulation, trimming, regex, concatenation, and more</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">🔢</div>
+                        <h3>Numeric Functions</h3>
+                        <p>Mathematical operations, rounding, power, and statistical functions</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">📅</div>
+                        <h3>Date & Time</h3>
+                        <p>Date arithmetic, formatting, extraction, and time zone handling</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">❓</div>
+                        <h3>Null Handling</h3>
+                        <p>Coalesce, null checks, and null replacement functions</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">🔀</div>
+                        <h3>Conditional</h3>
+                        <p>CASE statements, IF conditions, and when/otherwise logic</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">📊</div>
+                        <h3>Aggregation</h3>
+                        <p>Count, sum, average, collect functions, and grouping operations</p>
+                    </div>
+                    <div class="overview-card">
+                        <div class="card-icon">🪟</div>
+                        <h3>Window Functions</h3>
+                        <p>Row numbers, ranking, lag/lead, and analytical functions</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="functions" class="section">
+            <div class="container">
+                <h2>🔧 Function Reference</h2>
+                
+                <!-- String Functions -->
+                <div class="function-category">
+                    <h3 class="category-title">
+                        <span class="category-icon">🔤</span>
+                        String Functions
+                    </h3>
+                    
+                    <div class="functions-grid">
+                        <div class="function-card">
+                            <h4>length(str)</h4>
+                            <p class="function-desc">Returns the length of a string</p>
+                            <div class="code-block">
+                                <pre><code>SELECT length('Spark') AS result;
+-- Output: 5
+
+# PySpark
+df.select(F.length("name").alias("name_length"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>upper(str) / lower(str)</h4>
+                            <p class="function-desc">Convert string to uppercase or lowercase</p>
+                            <div class="code-block">
+                                <pre><code>SELECT upper('spark') AS upper_case,
+       lower('SPARK') AS lower_case;
+-- Output: SPARK, spark
+
+# PySpark
+df.select(F.upper("name"), F.lower("name"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>concat(a, b, ...)</h4>
+                            <p class="function-desc">Concatenate multiple strings</p>
+                            <div class="code-block">
+                                <pre><code>SELECT concat('Hi ', 'Spark') AS result;
+-- Output: Hi Spark
+
+# PySpark
+df.select(F.concat(F.lit("Hi "), F.col("name")))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>concat_ws(sep, ...)</h4>
+                            <p class="function-desc">Concatenate with separator</p>
+                            <div class="code-block">
+                                <pre><code>SELECT concat_ws('-', 'a', 'b', 'c') AS result;
+-- Output: a-b-c
+
+# PySpark
+df.select(F.concat_ws("-", "col1", "col2"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>substring(str, pos, len)</h4>
+                            <p class="function-desc">Extract substring from position with length</p>
+                            <div class="code-block">
+                                <pre><code>SELECT substring('SparkSQL', 1, 5) AS result;
+-- Output: Spark
+
+# PySpark
+df.select(F.substring("text", 1, 5))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>instr(str, substr)</h4>
+                            <p class="function-desc">Find position of substring (1-based)</p>
+                            <div class="code-block">
+                                <pre><code>SELECT instr('SparkSQL', 'SQL') AS position;
+-- Output: 6
+
+# PySpark
+df.select(F.instr("text", "SQL"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>replace(str, search, repl)</h4>
+                            <p class="function-desc">Literal string replacement</p>
+                            <div class="code-block">
+                                <pre><code>SELECT replace('Hello World', 'World', 'Spark') AS result;
+-- Output: Hello Spark
+
+# PySpark
+df.select(F.expr("replace(text, 'old', 'new')"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>regexp_replace(str, pattern, repl)</h4>
+                            <p class="function-desc">Regex-based string replacement</p>
+                            <div class="code-block">
+                                <pre><code>SELECT regexp_replace('123-456', '\\D', '') AS result;
+-- Output: 123456 (removes non-digits)
+
+# PySpark
+df.select(F.regexp_replace("phone", "\\D", ""))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>regexp_extract(str, pattern, group)</h4>
+                            <p class="function-desc">Extract regex groups from string</p>
+                            <div class="code-block">
+                                <pre><code>SELECT regexp_extract('id=123', '(\\d+)', 1) AS id;
+-- Output: 123
+
+# PySpark
+df.select(F.regexp_extract("text", "(\\d+)", 1))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>trim/ltrim/rtrim(str)</h4>
+                            <p class="function-desc">Remove whitespace from both ends, left, or right</p>
+                            <div class="code-block">
+                                <pre><code>SELECT trim('  Spark  ') AS trimmed;
+-- Output: Spark
+
+SELECT trim('x' FROM 'xxSparkxx') AS custom_trim;
+-- Output: Spark
+
+# PySpark
+df.select(F.trim("name"), F.ltrim("name"), F.rtrim("name"))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Numeric Functions -->
+                <div class="function-category">
+                    <h3 class="category-title">
+                        <span class="category-icon">🔢</span>
+                        Numeric Functions
+                    </h3>
+                    
+                    <div class="functions-grid">
+                        <div class="function-card">
+                            <h4>abs(x)</h4>
+                            <p class="function-desc">Absolute value</p>
+                            <div class="code-block">
+                                <pre><code>SELECT abs(-5) AS result;
+-- Output: 5
+
+# PySpark
+df.select(F.abs("amount"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>round(x, n)</h4>
+                            <p class="function-desc">Round to n decimal places</p>
+                            <div class="code-block">
+                                <pre><code>SELECT round(3.1416, 2) AS result;
+-- Output: 3.14
+
+# PySpark
+df.select(F.round("price", 2))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>floor(x) / ceil(x)</h4>
+                            <p class="function-desc">Round down or up to nearest integer</p>
+                            <div class="code-block">
+                                <pre><code>SELECT floor(3.7) AS floor_val,
+       ceil(3.1) AS ceil_val;
+-- Output: 3, 4
+
+# PySpark
+df.select(F.floor("value"), F.ceil("value"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>pow(x, y) / sqrt(x)</h4>
+                            <p class="function-desc">Power and square root functions</p>
+                            <div class="code-block">
+                                <pre><code>SELECT pow(2, 3) AS power,
+       sqrt(16) AS square_root;
+-- Output: 8, 4
+
+# PySpark
+df.select(F.pow("base", "exp"), F.sqrt("number"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>rand()</h4>
+                            <p class="function-desc">Random number between 0 and 1</p>
+                            <div class="code-block">
+                                <pre><code>SELECT rand() AS random_num;
+-- Output: 0.56... (varies)
+
+# PySpark
+df.select(F.rand().alias("random"))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date & Time Functions -->
+                <div class="function-category">
+                    <h3 class="category-title">
+                        <span class="category-icon">📅</span>
+                        Date & Time Functions
+                    </h3>
+                    
+                    <div class="functions-grid">
+                        <div class="function-card">
+                            <h4>current_date() / current_timestamp()</h4>
+                            <p class="function-desc">Get current date or timestamp</p>
+                            <div class="code-block">
+                                <pre><code>SELECT current_date() AS today,
+       current_timestamp() AS now;
+
+# PySpark
+df.select(F.current_date(), F.current_timestamp())</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>date_add(date, n) / date_sub(date, n)</h4>
+                            <p class="function-desc">Add or subtract days from date</p>
+                            <div class="code-block">
+                                <pre><code>SELECT date_add('2025-01-01', 10) AS future_date,
+       date_sub('2025-01-10', 5) AS past_date;
+-- Output: 2025-01-11, 2025-01-05
+
+# PySpark
+df.select(F.date_add("date_col", 10), F.date_sub("date_col", 5))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>datediff(d1, d2)</h4>
+                            <p class="function-desc">Difference between dates in days</p>
+                            <div class="code-block">
+                                <pre><code>SELECT datediff('2025-01-10', '2025-01-01') AS days_diff;
+-- Output: 9
+
+# PySpark
+df.select(F.datediff("end_date", "start_date"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>months_between(d1, d2)</h4>
+                            <p class="function-desc">Months between two dates</p>
+                            <div class="code-block">
+                                <pre><code>SELECT months_between('2025-02-01', '2025-01-01') AS months;
+-- Output: 1.0
+
+# PySpark
+df.select(F.months_between("d1", "d2"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>add_months(date, n)</h4>
+                            <p class="function-desc">Add months to a date</p>
+                            <div class="code-block">
+                                <pre><code>SELECT add_months('2025-01-01', 2) AS future_month;
+-- Output: 2025-03-01
+
+# PySpark
+df.select(F.add_months("date_col", 2))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>year/month/day(date)</h4>
+                            <p class="function-desc">Extract date components</p>
+                            <div class="code-block">
+                                <pre><code>SELECT year('2025-09-09') AS year_part,
+       month('2025-09-09') AS month_part,
+       day('2025-09-09') AS day_part;
+-- Output: 2025, 9, 9
+
+# PySpark
+df.select(F.year("date"), F.month("date"), F.day("date"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>hour/minute/second(timestamp)</h4>
+                            <p class="function-desc">Extract time components</p>
+                            <div class="code-block">
+                                <pre><code>SELECT hour('2025-09-09 12:34:56') AS hour_part;
+-- Output: 12
+
+# PySpark
+df.select(F.hour("timestamp"), F.minute("timestamp"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>date_format(ts, fmt)</h4>
+                            <p class="function-desc">Format date/timestamp as string</p>
+                            <div class="code-block">
+                                <pre><code>SELECT date_format('2025-09-09', 'yyyy/MM/dd') AS formatted;
+-- Output: 2025/09/09
+
+# PySpark
+df.select(F.date_format("date", "yyyy-MM-dd"))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Null Handling Functions -->
+                <div class="function-category">
+                    <h3 class="category-title">
+                        <span class="category-icon">❓</span>
+                        Null Handling Functions
+                    </h3>
+                    
+                    <div class="functions-grid">
+                        <div class="function-card">
+                            <h4>coalesce(a, b, ...)</h4>
+                            <p class="function-desc">Return first non-null value</p>
+                            <div class="code-block">
+                                <pre><code>SELECT coalesce(NULL, 'default', 'backup') AS result;
+-- Output: default
+
+# PySpark
+df.select(F.coalesce("col1", "col2", F.lit("default")))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>nvl(a, b) / ifnull(a, b)</h4>
+                            <p class="function-desc">Replace null with specified value</p>
+                            <div class="code-block">
+                                <pre><code>SELECT nvl(NULL, 'replacement') AS result;
+-- Output: replacement
+
+# PySpark
+df.select(F.when(F.col("name").isNull(), "Unknown").otherwise(F.col("name")))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>nullif(a, b)</h4>
+                            <p class="function-desc">Return null if a equals b</p>
+                            <div class="code-block">
+                                <pre><code>SELECT nullif(5, 5) AS result;
+-- Output: NULL
+
+# PySpark
+df.select(F.when(F.col("a") == F.col("b"), None).otherwise(F.col("a")))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>isnull(a)</h4>
+                            <p class="function-desc">Check if value is null</p>
+                            <div class="code-block">
+                                <pre><code>SELECT isnull(NULL) AS is_null_check;
+-- Output: true
+
+# PySpark
+df.select(F.col("name").isNull())</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conditional Functions -->
+                <div class="function-category">
+                    <h3 class="category-title">
+                        <span class="category-icon">🔀</span>
+                        Conditional Functions
+                    </h3>
+                    
+                    <div class="functions-grid">
+                        <div class="function-card">
+                            <h4>CASE WHEN ... THEN ... ELSE ... END</h4>
+                            <p class="function-desc">Conditional logic with multiple branches</p>
+                            <div class="code-block">
+                                <pre><code>SELECT 
+  CASE 
+    WHEN score >= 90 THEN 'A'
+    WHEN score >= 80 THEN 'B'
+    WHEN score >= 70 THEN 'C'
+    ELSE 'F'
+  END AS grade
+FROM students;
+
+# PySpark
+df.select(
+  F.when(F.col("score") >= 90, "A")
+   .when(F.col("score") >= 80, "B")
+   .when(F.col("score") >= 70, "C")
+   .otherwise("F").alias("grade")
+)</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>if(condition, true_val, false_val)</h4>
+                            <p class="function-desc">Simple if-else condition</p>
+                            <div class="code-block">
+                                <pre><code>SELECT if(1=1, 'Yes', 'No') AS result;
+-- Output: Yes
+
+# PySpark
+df.select(F.when(F.col("age") >= 18, "Adult").otherwise("Minor"))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aggregation Functions -->
+                <div class="function-category">
+                    <h3 class="category-title">
+                        <span class="category-icon">📊</span>
+                        Aggregation Functions
+                    </h3>
+                    
+                    <div class="functions-grid">
+                        <div class="function-card">
+                            <h4>count(*) / count(distinct col)</h4>
+                            <p class="function-desc">Count rows or unique values</p>
+                            <div class="code-block">
+                                <pre><code>SELECT count(*) AS total_rows,
+       count(distinct name) AS unique_names
+FROM table;
+
+# PySpark
+df.agg(F.count("*"), F.countDistinct("name"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>sum(col) / avg(col)</h4>
+                            <p class="function-desc">Sum and average of numeric columns</p>
+                            <div class="code-block">
+                                <pre><code>SELECT sum(salary) AS total_salary,
+       avg(salary) AS avg_salary
+FROM employees;
+
+# PySpark
+df.agg(F.sum("salary"), F.avg("salary"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>min(col) / max(col)</h4>
+                            <p class="function-desc">Minimum and maximum values</p>
+                            <div class="code-block">
+                                <pre><code>SELECT min(age) AS youngest,
+       max(age) AS oldest
+FROM people;
+
+# PySpark
+df.agg(F.min("age"), F.max("age"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>collect_list(col) / collect_set(col)</h4>
+                            <p class="function-desc">Collect values into array (with/without duplicates)</p>
+                            <div class="code-block">
+                                <pre><code>SELECT collect_list(name) AS all_names,
+       collect_set(name) AS unique_names
+FROM table
+GROUP BY department;
+
+# PySpark
+df.groupBy("dept").agg(F.collect_list("name"), F.collect_set("name"))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Window Functions -->
+                <div class="function-category">
+                    <h3 class="category-title">
+                        <span class="category-icon">🪟</span>
+                        Window Functions
+                    </h3>
+                    
+                    <div class="functions-grid">
+                        <div class="function-card">
+                            <h4>row_number()</h4>
+                            <p class="function-desc">Unique row number within partition</p>
+                            <div class="code-block">
+                                <pre><code>SELECT name, salary,
+       row_number() OVER (ORDER BY salary DESC) AS rn
+FROM employees;
+
+# PySpark
+from pyspark.sql.window import Window
+
+windowSpec = Window.orderBy(F.desc("salary"))
+df.select("*", F.row_number().over(windowSpec).alias("rn"))</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>rank() / dense_rank()</h4>
+                            <p class="function-desc">Ranking with or without gaps</p>
+                            <div class="code-block">
+                                <pre><code>SELECT name, score,
+       rank() OVER (ORDER BY score DESC) AS rank,
+       dense_rank() OVER (ORDER BY score DESC) AS dense_rank
+FROM students;
+
+# PySpark
+windowSpec = Window.orderBy(F.desc("score"))
+df.select("*", 
+  F.rank().over(windowSpec).alias("rank"),
+  F.dense_rank().over(windowSpec).alias("dense_rank")
+)</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>lag(col, n) / lead(col, n)</h4>
+                            <p class="function-desc">Access previous or next row values</p>
+                            <div class="code-block">
+                                <pre><code>SELECT date, price,
+       lag(price, 1) OVER (ORDER BY date) AS prev_price,
+       lead(price, 1) OVER (ORDER BY date) AS next_price
+FROM stock_prices;
+
+# PySpark
+windowSpec = Window.orderBy("date")
+df.select("*",
+  F.lag("price", 1).over(windowSpec).alias("prev_price"),
+  F.lead("price", 1).over(windowSpec).alias("next_price")
+)</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="function-card">
+                            <h4>ntile(n)</h4>
+                            <p class="function-desc">Divide rows into n buckets</p>
+                            <div class="code-block">
+                                <pre><code>SELECT name, score,
+       ntile(4) OVER (ORDER BY score DESC) AS quartile
+FROM students;
+
+# PySpark
+windowSpec = Window.orderBy(F.desc("score"))
+df.select("*", F.ntile(4).over(windowSpec).alias("quartile"))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="examples" class="section">
+            <div class="container">
+                <h2>💡 Key Concepts & Examples</h2>
+                
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>🔄 TRIM vs REGEXP_REPLACE</h3>
+                        <div class="concept-content">
+                            <p><strong>Key Difference:</strong> TRIM only affects string ends, REGEXP_REPLACE can clean inside.</p>
+                            <div class="code-block">
+                                <pre><code>-- TRIM: Only removes from ends
+SELECT trim('  Hello   World  ') AS trimmed;
+-- Output: 'Hello   World'
+
+-- REGEXP_REPLACE: Can normalize internal spaces
+SELECT regexp_replace(trim('  Hello   World  '), '\\s+', ' ') AS normalized;
+-- Output: 'Hello World'</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="concept-card">
+                        <h3>🔄 REPLACE vs REGEXP_REPLACE</h3>
+                        <div class="concept-content">
+                            <p><strong>Key Difference:</strong> REPLACE is literal, REGEXP_REPLACE uses regex patterns.</p>
+                            <div class="code-block">
+                                <pre><code>-- REPLACE: Literal substring replacement
+SELECT replace('123-456-789', '-', '') AS literal;
+-- Output: '123456789'
+
+-- REGEXP_REPLACE: Pattern-based replacement
+SELECT regexp_replace('123-456-789', '\\D', '') AS regex;
+-- Output: '123456789' (removes all non-digits)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="concept-card">
+                        <h3>⚡ col() vs expr()</h3>
+                        <div class="concept-content">
+                            <p><strong>Key Difference:</strong> col() references columns, expr() evaluates SQL expressions.</p>
+                            <div class="code-block">
+                                <pre><code># col(): Simple column reference
+df.select(F.col("name"))
+
+# expr(): SQL expression evaluation
+df.select(F.expr("upper(name)"))
+df.select(F.expr("case when age >= 18 then 'Adult' else 'Minor' end"))</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="concept-card">
+                        <h3>🎯 Common Exam Patterns</h3>
+                        <div class="concept-content">
+                            <p><strong>Frequently tested combinations:</strong></p>
+                            <div class="code-block">
+                                <pre><code>-- Clean and normalize text
+SELECT regexp_replace(trim(name), '\\s+', ' ') AS clean_name;
+
+-- Mask sensitive data
+SELECT regexp_replace(email, '\\S+@\\S+', '***') AS masked;
+
+-- Extract and format dates
+SELECT date_format(current_date(), 'yyyy-MM-dd') AS today;
+
+-- Window function with partitioning
+SELECT name, salary,
+       rank() OVER (PARTITION BY dept ORDER BY salary DESC) AS dept_rank;</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exam-tips">
+                    <h3>🎓 Exam Success Tips</h3>
+                    <div class="tips-grid">
+                        <div class="tip-card">
+                            <div class="tip-icon">✅</div>
+                            <h4>Remember Escaping</h4>
+                            <p>Always use double backslashes in regex: <code>\\d</code> for digits, <code>\\s</code> for spaces</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">🔍</div>
+                            <h4>Function Categories</h4>
+                            <p>Memorize by category: String, Numeric, Date, Null, Conditional, Aggregation, Window</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">⚠️</div>
+                            <h4>NULL Behavior</h4>
+                            <p>Most functions return NULL when input is NULL. Use coalesce() for defaults</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">🪟</div>
+                            <h4>Window Functions</h4>
+                            <p>Always used with OVER clause. Remember PARTITION BY and ORDER BY syntax</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Hamburger Navigation Menu -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <div class="nav-close" id="navClose">&times;</div>
+        <div class="nav-menu">
+            <div class="nav-header">
+                <h3>🔥 PySpark Hub</h3>
+                <p>Navigate to any topic</p>
+            </div>
+            <div class="nav-links-grid">
+                <a href="index.html" class="nav-link home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="basic.html" class="nav-link">
+                    <span class="nav-icon">🌱</span>
+                    <span class="nav-text">Basics</span>
+                </a>
+                <a href="filter.html" class="nav-link">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-text">Filter</span>
+                </a>
+                <a href="map.html" class="nav-link">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Map</span>
+                </a>
+                <a href="flatmap.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">FlatMap</span>
+                </a>
+                <a href="lambda.html" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-text">Lambda</span>
+                </a>
+                <a href="reduce.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Reduce</span>
+                </a>
+                <a href="reducebykey.html" class="nav-link">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-text">ReduceByKey</span>
+                </a>
+                <a href="mapvalues.html" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">MapValues</span>
+                </a>
+                <a href="groupbykey.html" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">GroupByKey</span>
+                </a>
+                <a href="join.html" class="nav-link">
+                    <span class="nav-icon">🔗</span>
+                    <span class="nav-text">Join</span>
+                </a>
+                <a href="sortbykey.html" class="nav-link">
+                    <span class="nav-icon">🔢</span>
+                    <span class="nav-text">SortByKey</span>
+                </a>
+                <a href="union-distinct.html" class="nav-link">
+                    <span class="nav-icon">🔀</span>
+                    <span class="nav-text">Union & Distinct</span>
+                </a>
+                <a href="persistence.html" class="nav-link">
+                    <span class="nav-icon">🔄</span>
+                    <span class="nav-text">Persistence</span>
+                </a>
+                <a href="shared-variables.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Shared Variables</span>
+                </a>
+                <a href="spark-sql.html" class="nav-link">
+                    <span class="nav-icon">🗃️</span>
+                    <span class="nav-text">Spark SQL</span>
+                </a>
+                <a href="spark-sql-programming.html" class="nav-link">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">SQL Programming</span>
+                </a>
+                <a href="spark-sql-functions.html" class="nav-link current">
+                    <span class="nav-icon">🔥</span>
+                    <span class="nav-text">SQL Functions</span>
+                </a>
+                <a href="dataframe-operations.html" class="nav-link">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">DataFrame Operations</span>
+                </a>
+                <a href="troubleshooting.html" class="nav-link">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">Troubleshooting</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 PySpark Learning Hub. All content compiled for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Hamburger Menu Functionality
+        const hamburgerMenu = document.getElementById('hamburgerMenu');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        
+        if (hamburgerMenu && navOverlay && navClose) {
+            // Open menu
+            hamburgerMenu.addEventListener('click', () => {
+                navOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close menu
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // Close menu when clicking on overlay background
+            navOverlay.addEventListener('click', (e) => {
+                if (e.target === navOverlay) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && navOverlay.classList.contains('active')) {
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Add intersection observer for animation triggers
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe cards for scroll animations
+        document.querySelectorAll('.function-card, .concept-card, .overview-card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // Copy code functionality
+        document.querySelectorAll('.code-block').forEach(block => {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.innerHTML = '📋';
+            copyBtn.title = 'Copy code';
+            
+            copyBtn.addEventListener('click', () => {
+                const code = block.querySelector('code').textContent;
+                navigator.clipboard.writeText(code).then(() => {
+                    copyBtn.innerHTML = '✅';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '📋';
+                    }, 2000);
+                });
+            });
+            
+            block.appendChild(copyBtn);
+        });
+    </script>
+
+    <style>
+        /* Additional styles specific to this page */
+        .function-category {
+            margin-bottom: 4rem;
+        }
+
+        .category-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--accent-color);
+            color: var(--text-primary);
+            font-size: 1.5rem;
+        }
+
+        .category-icon {
+            font-size: 1.8rem;
+        }
+
+        .functions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .function-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .function-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .function-card h4 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+        }
+
+        .function-desc {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .code-block {
+            position: relative;
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid #333;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .code-block code {
+            color: #e6e6e6;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .concept-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.1);
+        }
+
+        .concept-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .concept-content p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .exam-tips {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), rgba(255, 215, 0, 0.02));
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .exam-tips h3 {
+            color: var(--accent-color);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .tip-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            text-align: center;
+        }
+
+        .tip-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .tip-card h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .tip-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .tip-card code {
+            background: rgba(255, 215, 0, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .functions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .concept-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tips-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</body>
+</html>
